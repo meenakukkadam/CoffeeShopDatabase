@@ -22,29 +22,27 @@ try:
 
                     if(len(user) > 10):
                         print('Username greater than 10 characters, please try again.')  
-                        accCreate()
-                    
-                    cur.execute("SELECT customerid FROM customer")
-                    for record in cur.fetchall():
-                        if(record['customerid'] == user):
-                                isValidUser = 0
-                                break
-                    
-
-                    if(isValidUser):
-                        fname = input('Enter your first name: ')
-                        lname = input('Enter your last name: ')
-                        addr = input('Enter your address: ')
-                        email = input('Enter your email: ')
-                        dob = input('Enter your date of birth (yyyy-mm-dd): ')
-                        phone = input('Enter your phone number (no dashes): ')
-                        insertScript = 'INSERT INTO customer(customerid, fname, lname, customeraddress, email, dob, phonenumber, balance) VALUES(%s, %s, %s, %s, %s, %s, %s, 0)'
-                        insertValues = [(user, fname, lname, addr, email, dob, phone),]
-                        cur.execute(insertScript, insertValues)
-                        return
                     else:
-                        print('Username already exist, please try again')
-                        accCreate()
+                        cur.execute("SELECT customerid FROM customer")
+                        for record in cur.fetchall():
+                            if(record['customerid'] == user):
+                                    isValidUser = 0
+                                    break
+                            
+                        if(isValidUser):
+                            fname = input('Enter your first name: ')
+                            lname = input('Enter your last name: ')
+                            addr = input('Enter your address: ')
+                            email = input('Enter your email: ')
+                            dob = input('Enter your date of birth (yyyy-mm-dd): ')
+                            phone = input('Enter your phone number (no dashes): ')
+                            insertScript = 'INSERT INTO customer(customerid, fname, lname, customeraddress, email, dob, phonenumber, balance) VALUES(%s, %s, %s, %s, %s, %s, %s, 0)'
+                            insertValues = [(user, fname, lname, addr, email, dob, phone),]
+                            cur.execute(insertScript, insertValues)
+                            return
+                        else:
+                            print('Username already exist, please try again')
+                            accCreate()
 
             def login(user, passw):
                 privilege = 0
