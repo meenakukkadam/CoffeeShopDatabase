@@ -12,7 +12,7 @@ CREATE TABLE owners (
 	ownAddress varchar(50),
 	email varchar(30),
 	DOB date,
-	phoneNumber integer
+	phoneNumber bigint
 );
 
 CREATE TABLE shop (
@@ -25,12 +25,13 @@ CREATE TABLE shop (
 
 CREATE TABLE customer (
 	customerID char(10) PRIMARY KEY,
+	passw varchar(30),
 	fName varchar(30),
 	lName varchar(30),
 	customerAddress varchar(50),
 	email varchar(30),
 	DOB date,
-	phoneNumber integer,
+	phoneNumber bigint,
 	balance decimal(10,2)
 );
 
@@ -48,7 +49,7 @@ CREATE TABLE employees (
 	empAddress varchar(50),
 	email varchar(30),
 	DOB date,
-	phoneNumber integer,
+	phoneNumber bigint,
 	storeID integer REFERENCES shop
 );
 
