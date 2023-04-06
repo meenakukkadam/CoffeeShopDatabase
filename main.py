@@ -1,6 +1,7 @@
 # install psycopg2-binary: https://bobbyhadz.com/blog/python-no-module-named-psycopg2
 import psycopg2
-import psycopg2.extras # this is for returning data as dictionaries
+import psycopg2.extras # for returning data as dictionaries
+from datetime import datetime # for confirming dates match format
 
 hostname = 'localhost'
 database = 'CoffeeShop'
@@ -16,60 +17,141 @@ try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
 
             def accCreate():
-                isValidUser = False
-                while not isValidUser:
+                # While loop to keep displaying menu until user has been created
+                while True:
+                    #flag for valid username, take username input
+                    isValidUser = True
                     user = input('Enter your preferred username (max 10 characters): ') 
-
+                    
+                    #check if username matches the size in the database
                     if(len(user) > 10):
                         print('Username greater than 10 characters, please try again.')  
                     else:
+                        #check if the username already exists in the database
                         cur.execute("SELECT customerid FROM customer")
                         for record in cur.fetchall():
-                            if(record['customerid'] == user):
-                                    isValidUser = 0
+                            if(record['customerid'].strip() == user):
+                                isValidUser = False
+                                break
+                        
+                        #if the username is new, ask for input values
+                        if(isValidUser):
+                            #input password, check for correct length, and confirm password with the user
+                            passw = input('Enter your preferred password: ')
+                            while True:
+                                if len(passw) > 30:
+                                    print('Password must be less than 30 characters, please try again.')
+                                    passw = input('Enter your preferred password: ')
+                                else:
+                                    pass2 = input('Confirm password: ')
+                                    if passw != pass2:
+                                        print('Passwords do not match, please try again.')
+                                        passw = input('Enter your preferred password: ')
+                                    else:
+                                        break
+                            
+                            #input first name and check for correct length
+                            fname = input('Enter your first name: ')
+                            while True:
+                                if(len(fname) > 30):
+                                    print('First name must be less than 30 characters, please try again.')
+                                    fname = input('Enter your first name: ')
+                                else:
                                     break
                             
-                        if(isValidUser):
-                            fname = input('Enter your first name: ')
+                            #input last name and check for correct length
                             lname = input('Enter your last name: ')
+                            while True:
+                                if(len(lname) > 30):
+                                    print('Last name must be less than 30 characters, please try again.')
+                                    lname = input('Enter your last name: ')
+                                else:
+                                    break
+                                
+                            #input addresss and check for correct length
                             addr = input('Enter your address: ')
+                            while True:
+                                if(len(addr) > 50):
+                                    print('Address must be less than 50 characters, please try again.')
+                                    addr = input('Enter your address: ')
+                                else:
+                                    break
+                            
+                            #input email and check for correct length
                             email = input('Enter your email: ')
+                            while True:
+                                if(len(email) > 30):
+                                    print('Email must be less than 30 characters, please try again.')
+                                    email = input('Enter your email: ')
+                                else:
+                                    break
+                            
+                            #input date of birth in requested format
                             dob = input('Enter your date of birth (yyyy-mm-dd): ')
-                            phone = input('Enter your phone number (no dashes): ')
-                            insertScript = 'INSERT INTO customer(customerid, fname, lname, customeraddress, email, dob, phonenumber, balance) VALUES(%s, %s, %s, %s, %s, %s, %s, 0)'
-                            insertValues = [(user, fname, lname, addr, email, dob, phone),]
+                            format = "%Y-%m-%d"     #format required for database
+                            validDate = False       #flag to check for valid format
+                            while not validDate:
+                                try:
+                                    #call strptime to check for valid format, set validDate to bool value returned
+                                    validDate = bool(datetime.strptime(dob, format))
+                                except ValueError:
+                                    #dob does not match format
+                                    validDate = False
+                                
+                                #if dob does not match format, output message and take input again
+                                if not validDate:
+                                    print("Invalid input. Please try again.")
+                                    dob = input('Enter your date of birth (yyyy-mm-dd): ')
+
+                            #input phone number, check if int, and check if in range
+                            phone = inputHandle('Enter your phone number (no dashes): ', int, [0000000000, 9999999999])
+                            while phone is False: #validate user input
+                                print('Invalid input. Please try again.')
+                                phone = inputHandle('Enter your phone number (no dashes): ', int, [0000000000, 9999999999])
+                            
+                            #insert values into database
+                            insertScript = 'INSERT INTO customer(customerid, fname, lname, customeraddress, email, dob, phonenumber, balance, passw) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+                            insertValues = (user, fname, lname, addr, email, dob, phone, 0, passw)
                             cur.execute(insertScript, insertValues)
-                            return
+                            break
                         else:
-                            print('Username already exist, please try again')
-                            accCreate()
+                            #user already exists, output message
+                            print('Username already exists, please try again')
 
-            def login(user, passw):
-                privilege = 0
-                isValidUser = 0
-                isValidPass = 0
-                # get username, passw
-                user = input('Enter the username: ')   
-                passw = input('Enter sthe password: ')
+                #output message and commit changes to database
+                print("\nUser created successfully!\n")
+                conn.commit()
 
-                # compare with user from db
-                if(user == 'a'):
-                    isValidUser = 1
-                else:
-                    return False
-                
-                # compare with corresponding passw from db
-                if(passw == 'b'):
-                    isValidPass = 1
-                else:
-                    return False
-                
-                if(isValidUser and isValidPass):
-                    print('Successfully logged in')
-                    return True
-                else:
-                    print('Invalid user or password')
-                    return False
+            def login():
+                #While loop to keep displaying menu until user has logged in
+                while True:
+                    isValidUser = False     #flag to check if user input matches a user in the database
+                    passw = ''              #if user was found, keep password to check input password is correct
+                    # get username
+                    user = input('Enter your username: ')
+
+                    #check if user exists in the database
+                    cur.execute("SELECT customerid, passw FROM customer")
+                    for record in cur.fetchall():
+                        if(record['customerid'].strip() == user):
+                            #if user exists, keep password and set flag to true
+                            passw = record['passw']
+                            isValidUser = True
+                            break
+                    
+                    #if user was found as for password
+                    if(isValidUser):
+                        inputPassw = input('Enter your password: ')
+                        #if passwords do not match output message
+                        if inputPassw != passw:
+                            print("Incorrect password. Please try again.")
+                        else:
+                            #passwords matched, output message, and return the username
+                            print("Successfully logged in!")
+                            return user
+                    else: #user does not exist, return message
+                        print('Username does not exist. Please try again.')
+
 
             # display drinks menu
             def menu():
@@ -134,6 +216,7 @@ try:
                 print(f"{' Welcome to Postgres Coffee! ':*^50}")
                 print(f"{'':*^50}\n")
                 selection = 0
+                user = ''
 
                 while selection != 6:
                     print('\nPlease choose an option')
@@ -145,16 +228,25 @@ try:
                     print('[6] Quit')
 
                     selection = inputHandle('Enter your selection: ', int, [1, 6])
+                    while selection == False:
+                        print('Invalid input. Please try again.')
+                        selection = inputHandle('Enter your selection: ', int, [1, 6])
+                        
                     if selection == 1:
                         menu()
                     elif selection == 2:
                         stores
                     elif selection == 3:
-                        pass
+                        if len(user) == 0:
+                            print('To order, please sign in to your account.')
+                        else:
+                            pass
                     elif selection == 4:
-                        login('empty', 'empty')
+                        user = login()
                     elif selection == 5:
                         accCreate()
+                    elif selection == 6:
+                        print('Goodbye!\n')
                 
             # employee view
             def empView():
@@ -169,18 +261,13 @@ try:
                         data = input(text)
                         data = typeCast(data)
                     except ValueError:
-                        print('Invalid input')
+                        return False
                     else:
                         break # break loop
                 if (data >= range[0] and data <= range[1]):
                     return data
                 else:
-                    print('Input out of range')
-
-                # if (type(data) is not typeCast ):
-                #     print('invalid input')
-                # else:
-                #     data = typeCast(data)
+                    return False
             
             def main():
                 custView()
