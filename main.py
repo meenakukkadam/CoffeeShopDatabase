@@ -1,13 +1,14 @@
 # install psycopg2-binary: https://bobbyhadz.com/blog/python-no-module-named-psycopg2
 import psycopg2
 import psycopg2.extras # for returning data as dictionaries
+import os
 from datetime import datetime # for confirming dates match format
 
 hostname = 'localhost'
-database = 'CoffeeShop'
-username = 'postgres'
-pwd = 'admin'
-port_id = 5433
+database = 'coffeeshop'
+username = 'din'
+pwd = '123'
+port_id = 5432
 
 conn = None
 
@@ -157,50 +158,76 @@ try:
             def menu():
                 cur.execute("DROP VIEW IF EXISTS menuview")
                 cur.execute("CREATE VIEW MenuView AS SELECT productid, productname, price FROM products")
-                print('Hot Coffees:')
-                cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HC%'")
-                for record in cur.fetchall():
-                    print('\t', record['productname'].ljust(60), record['price'])
-                
-                print('Cold Coffees:')
-                cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'CC%'")
-                for record in cur.fetchall():
-                    print('\t', record['productname'].ljust(60), record['price'])
-
-                print('Hot Teas:')
-                cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HT%'")
-                for record in cur.fetchall():
-                    print('\t', record['productname'].ljust(60), record['price'])
-
-                print('Iced Teas:')
-                cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'IT%'")
-                for record in cur.fetchall():
-                    print('\t', record['productname'].ljust(60), record['price'])
-
-                print('Frappucinos:')
-                cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'F%'")
-                for record in cur.fetchall():
-                    print('\t', record['productname'].ljust(60), record['price'])
-
-                print('Hot Drinks:')
-                cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HD%'")
-                for record in cur.fetchall():
-                    print('\t', record['productname'].ljust(60), record['price'])
-
-                print('Cold Drinks:')
-                cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'CD%'")
-                for record in cur.fetchall():
-                    print('\t', record['productname'].ljust(60), record['price'])
-
-                print('Bakery:')
-                cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'B%' OR productid LIKE 'HB%'")
-                for record in cur.fetchall():
-                    print('\t', record['productname'].ljust(60), record['price'])
+                # selection for choosing category to see more
+                selection = 9
+                while(selection !=0):
+                    clearScreen()
+                    print(f"{' MENU ':*^50}")
+                    print('[1]. Hot Coffees:')
+                    if(selection == 1):
+                        cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HC%'")
+                        for record in cur.fetchall():
+                            print('\t', record['productname'].ljust(60, '.'), record['price'])
                     
+                    print('[2]. Cold Coffees:')
+                    if(selection == 2):
+                        cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'CC%'")
+                        for record in cur.fetchall():
+                            print('\t', record['productname'].ljust(60, '.'), record['price'])
+
+                    print('[3]. Hot Teas:')
+                    if(selection == 3):
+                        cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HT%'")
+                        for record in cur.fetchall():
+                            print('\t', record['productname'].ljust(60, '.'), record['price'])
+
+                    print('[4]. Iced Teas:')
+                    if(selection == 4):
+                        cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'IT%'")
+                        for record in cur.fetchall():
+                            print('\t', record['productname'].ljust(60, '.'), record['price'])
+
+                    print('[5]. Frappucinos:')
+                    if(selection == 5):                
+                        cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'F%'")
+                        for record in cur.fetchall():
+                            print('\t', record['productname'].ljust(60, '.'), record['price'])
+
+                    print('[6]. Hot Drinks:')
+                    if(selection == 6):
+                        cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HD%'")
+                        for record in cur.fetchall():
+                            print('\t', record['productname'].ljust(60, '.'), record['price'])
+
+                    print('[7]. Cold Drinks:')
+                    if(selection == 7):
+                        cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'CD%'")
+                        for record in cur.fetchall():
+                            print('\t', record['productname'].ljust(60, '.'), record['price'])
+
+                    print('[8]. Bakery:')
+                    if(selection == 8):
+                        cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'B%' OR productid LIKE 'HB%'")
+                        for record in cur.fetchall():
+                            print('\t', record['productname'].ljust(60, '.'), record['price'])
+                    
+                    print('[0]. Exit:')
+                    if(selection == 0):
+                        break
+                    selection = inputHandle("Select category to see more options: ", int, [0, 8])
+                    while selection == False:
+                        print('Invalid input. Please try again.')
+                        selection = inputHandle('Enter your selection: ', int, [0, 8])
 
             # to show stores
             def stores():
-                print('to show locations')
+                print(f"{' Locations ':*^50}\n")
+                cur.execute("DROP VIEW IF EXISTS storeview")
+                cur.execute("CREATE VIEW StoreView AS SELECT shoplocation FROM shop")
+                cur.execute("SELECT * FROM storeview")
+                for record in cur.fetchall():
+                    print(record['shoplocation'])
+
 
             # order
             def placeOrder():
@@ -235,7 +262,7 @@ try:
                     if selection == 1:
                         menu()
                     elif selection == 2:
-                        stores
+                        stores()
                     elif selection == 3:
                         if len(user) == 0:
                             print('To order, please sign in to your account.')
@@ -251,6 +278,11 @@ try:
             # employee view
             def empView():
                 pass
+
+            # ------------------------ HELPER FUNCTIONS ------------------------
+            # clear screen
+            def clearScreen():
+                os.system('clear')
 
             # handle user selection
             def inputHandle(text, typeCast, range):
