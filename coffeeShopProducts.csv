@@ -1,0 +1,130 @@
+﻿productID,productName,price,supplierID,productCost,inventory
+HC0001,caffe americano,2.5,473982974,0.75,500
+HC0002,verona blend,2.5,473982974,0.75,500
+HC0003,medium roast,2.5,473982974,0.75,500
+HC0004,dark roast,2.5,473982974,0.75,500
+HC0005,decaf roast,2.5,473982974,0.75,500
+HC0006,caffe mistal,2.75,473982974,0.825,500
+HC0007,cappuchino,2.75,473982974,0.825,500
+HC0008,espresso,2.5,473982974,0.75,500
+HC0009,flat white,3,473982974,0.9,500
+HC0010,honeymilk flat white,3.25,473982974,0.975,500
+HC0011,pistachio latte,3.5,473982974,1.05,500
+HC0012,caffee latte,3.5,473982974,1.05,500
+HC0013,cinnamon dolche latte,3.75,473982974,1.125,500
+HC0014,blonde vanilla latte,3.75,473982974,1.125,500
+HC0015,caramel macchiato,3.75,473982974,1.125,500
+HC0016,chocolate macchiato,3.75,473982974,1.125,500
+HC0017,espresso macchiato,3.5,473982974,1.05,500
+HC0018,caffe mocha,3.5,473982974,1.05,500
+HC0019,dark chocolate mocha,3.5,473982974,1.05,500
+HC0020,white chocolate mocha,3.75,473982974,1.125,500
+HT0001,chai tea latte,4.25,574835681,1.275,500
+HT0002,chai latte,4.25,574835681,1.275,500
+HT0003,earl grey tea,4,574835681,1.2,500
+HT0004,london tea latte,4,574835681,1.2,500
+HT0005,royal english breakfast tea,3.5,574835681,1.05,500
+HT0006,royal english breakfast tea latte,3.5,574835681,1.05,500
+HT0007,matcha tea latte,3.5,574835681,1.05,500
+HT0008,honey citrus mint tea,3,574835681,0.9,500
+HT0009,jade citrus mint brewed tea,3,574835681,0.9,500
+HT0010,mint herbal tea,3.5,574835681,1.05,500
+HT0011,peach herbal tea,3.5,574835681,1.05,500
+HD0001,hot chocolate,4,574835681,1.2,500
+HD0002,white hot chocolate,4,574835681,1.2,500
+HD0003,caramel apple juice,2.75,574835681,0.825,500
+HD0004,steamed apple juice,2.75,574835681,0.825,500
+HD0005,pistachio cream steamer,3.5,574835681,1.05,500
+HD0006,steamed milk,2.5,574835681,0.75,500
+HD0007,vanilla crème steamer,2.75,574835681,0.825,500
+F0001,pistachio frappachino,5.25,836590023,1.575,500
+F0002,mocha cookie crumble frappachino,5.5,836590023,1.65,500
+F0003,caramel crunch frappachino,5.75,836590023,1.725,500
+F0004,espresso frappachino,5.75,836590023,1.725,500
+F0005,caffe vanilla frappachino,5.5,836590023,1.65,500
+F0006,caramel frappachino,5.5,836590023,1.65,500
+F0007,coffee frappachino,5.5,836590023,1.65,500
+F0008,dark mocha frappachino,5.5,836590023,1.65,500
+F0009,java chip frappachino,5.75,836590023,1.725,500
+F0010,white chocolate mocha frappachino,6.25,836590023,1.875,500
+F0011,pistachio cream frappachino,6.25,836590023,1.875,500
+F0012,chocolate cookie crumble cream frappachino,6.25,836590023,1.875,500
+F0013,caramel crunch cream frappachino,6.25,836590023,1.875,500
+F0014,strawberry cream frappachino,6.25,836590023,1.875,500
+F0015,chai cream frappachino,6.25,836590023,1.875,500
+F0016,double chocolate chip cream frappachino,6.25,836590023,1.875,500
+F0017,matcha cream frappachino,6.25,836590023,1.875,500
+F0018,vanilla bean cream frappachino,6.25,836590023,1.875,500
+F0019,white chocolate cream frappachino,6.25,836590023,1.875,500
+CC0001,cinnamon caramel cream cold brew,4.25,247832134,1.275,500
+CC0002,pistachio cream cold brew,4.25,247832134,1.275,500
+CC0003,chocolate cream cold brew,4.25,247832134,1.275,500
+CC0004,salted caramel cream cold brew,4.25,247832134,1.275,500
+CC0005,vanilla sweet cream cold brew,4,247832134,1.2,500
+CC0006,nitro cold brew,4,247832134,1.2,500
+CC0007,cinnamon caramel cream nitro cold brew,3.5,247832134,1.05,500
+CC0008,vanilla sweet cream nitro cold brew,3.5,247832134,1.05,500
+CC0009,iced caffe americano,3.5,247832134,1.05,500
+CC0010,iced coffee with milk,3.25,247832134,0.975,500
+CC0011,iced espresso,3.5,247832134,1.05,500
+CC0012,iced toasted vanill oatmilk shaken espresso,3.75,247832134,1.125,500
+CC0013,iced brown sugar oatmilk shaken espresso,3.75,247832134,1.125,500
+CC0014,iced chocolate almondmilk shaken espresso,3.75,247832134,1.125,500
+CC0015,iced shaken espresso,3.75,247832134,1.125,500
+CC0016,iced flat white,5,247832134,1.5,500
+CC0017,iced honey almondmilk flat white,5.25,247832134,1.575,500
+CC0018,iced pistachio latte,5.25,247832134,1.575,500
+CC0019,iced hazelnut bianco latte,5.5,247832134,1.65,500
+CC0020,original iced late,5,247832134,1.5,500
+CC0021,iced caffe latte,5,247832134,1.5,500
+CC0022,iced cinnamon dolche latte,5.25,247832134,1.575,500
+CC0023,iced blonde vanilla latte,5.25,247832134,1.575,500
+CC0024,iced caramel macchiato,5,247832134,1.5,500
+CC0025,iced white chocolate mocha,5.25,247832134,1.575,500
+CC0026,iced caffe mocha,5.25,247832134,1.575,500
+CC0027,iced dark chocolate mocha,5.5,247832134,1.65,500
+IT0001,sparkling peach green tea,5,335267892,1.5,500
+IT0002,mango black tea,5,335267892,1.5,500
+IT0003,iced black tea,5.25,335267892,1.575,500
+IT0004,iced black tea lemonade,5.25,335267892,1.575,500
+IT0005,iced royal english breakfast tea latte,3.75,335267892,1.125,500
+IT0006,iced long fog tea latte,3.75,335267892,1.125,500
+IT0007,iced chai tea latte,3.75,335267892,1.125,500
+IT0008,iced peach green tea,3.75,335267892,1.125,500
+IT0009,iced peach green tea lemonade,3.5,335267892,1.05,500
+IT0010,iced matcha tea latte,3.5,335267892,1.05,500
+IT0011,iced green tea,3.5,335267892,1.05,500
+IT0012,iced green tea lemonade,3.75,335267892,1.125,500
+IT0013,iced matcha lemonade,4.25,335267892,1.275,500
+IT0014,iced passion tango tea,4.25,335267892,1.275,500
+IT0015,iced passion tango tea lemonade,4.25,335267892,1.275,500
+CD0001,dragon drink sparkler,4,728361993,1.2,500
+CD0002,mango dragonfruit sparkler,4,728361993,1.2,500
+CD0003,mango dragonfruit lemonade sparkler,4,728361993,1.2,500
+CD0004,paradise pineapple sparkler,4,728361993,1.2,500
+CD0005,strawberry acai lemonade sparkler,4.25,728361993,1.275,500
+CD0006,pineapple passionfruit sparkler,4.25,728361993,1.275,500
+CD0007,pineapple passionfruit lemonade sparkler,4.25,728361993,1.275,500
+CD0008,strawberry acai sparkler,4.25,728361993,1.275,500
+HB0001,mushroom egg muffin,5.75,221349846,2.3,500
+HB0002,bacon and egg muffin,5.75,221349846,2.3,500
+HB0003,egg and red pepper muffin,5.75,221349846,2.3,500
+HB0004,chicken and egg sandwich,6.25,221349846,2.5,500
+HB0005,"bacon, egg and sausage wrap",6.25,221349846,2.5,500
+HB0006,vegan breakfast sandwich,6.25,221349846,2.5,500
+HB0007,"bacon, egg and cheese sandwich",6.25,221349846,2.5,500
+HB0008,"sausage, egg and cheese sandwich",6.25,221349846,2.5,500
+HB0009,"spinach, egg and feta wrap",6.25,221349846,2.5,500
+B0001,plain bagel,3,283748104,1.2,500
+B0002,everything bagel,3.25,283748104,1.3,500
+B0003,chocolate chip cookie,2.75,283748104,1.1,500
+B0004,brownie,2.75,283748104,1.1,500
+B0005,sugar cookie,2.75,283748104,1.1,500
+B0006,butter croissant,2.5,283748104,1,500
+B0007,chocolate croissant,2.5,283748104,1,500
+B0008,red velvet cake,3.5,283748104,1.4,500
+B0009,cinnamon cake,3.5,283748104,1.4,500
+B0010,pumpkin cake,3.5,283748104,1.4,500
+B0011,cheese danish,3.5,283748104,1.4,500
+B0012,glazed donut,3.5,283748104,1.4,500
+B0013,blueberry muffin,3.5,283748104,1.4,500
