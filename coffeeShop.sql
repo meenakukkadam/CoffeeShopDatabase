@@ -3,7 +3,7 @@ CREATE TABLE products (
 	productname varchar(60),
 	price DECIMAL(10,2),
 	productcost DECIMAL(10,2)
-)
+);
 
 CREATE TABLE owners (
 	ownerID integer PRIMARY KEY,
@@ -50,7 +50,8 @@ CREATE TABLE employees (
 	email varchar(30),
 	DOB date,
 	phoneNumber bigint,
-	storeID integer REFERENCES shop
+	storeID integer REFERENCES shop,
+	passw varchar(30)
 );
 
 CREATE TABLE managers (
