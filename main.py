@@ -212,9 +212,9 @@ try:
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
                     
                     print('[0]. Exit:')
+                    selection = inputHandle("Select category to see more options: ", int, [0, 8])
                     if(selection == 0):
                         break
-                    selection = inputHandle("Select category to see more options: ", int, [0, 8])
                     while selection == False:
                         print('Invalid input. Please try again.')
                         selection = inputHandle('Enter your selection: ', int, [0, 8])
