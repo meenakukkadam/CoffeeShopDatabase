@@ -3,12 +3,13 @@ import psycopg2
 import psycopg2.extras # for returning data as dictionaries
 import os
 from datetime import datetime # for confirming dates match format
+import random
 
 hostname = 'localhost'
-database = 'coffeeshop'
-username = 'din'
-pwd = '123'
-port_id = 5432
+database = 'CoffeeShop'
+username = 'postgres'
+pwd = 'admin'
+port_id = 5433
 
 conn = None
 
@@ -153,6 +154,36 @@ try:
                     else: #user does not exist, return message
                         print('Username does not exist. Please try again.')
 
+            def emplogin():
+                #While loop to keep displaying menu until user has logged in
+                while True:
+                    isValidUser = False     #flag to check if user input matches a user in the database
+                    passw = ''              #if user was found, keep password to check input password is correct
+                    # get username
+                    ssn = input('Enter your ssn: ')
+
+                    #check if user exists in the database
+                    cur.execute("SELECT ssn, passw FROM employees")
+                    for record in cur.fetchall():
+                        if(record['ssn'].strip() == ssn):
+                            #if user exists, keep password and set flag to true
+                            passw = record['passw']
+                            isValidUser = True
+                            break
+                    
+                    #if user was found as for password
+                    if(isValidUser):
+                        inputPassw = input('Enter your password: ')
+                        #if passwords do not match output message
+                        if inputPassw != passw:
+                            print("Incorrect password. Please try again.")
+                        else:
+                            #passwords matched, output message, and return the username
+                            print("Successfully logged in!")
+                            return ssn
+                    else: #user does not exist, return message
+                        print('SSN does not exist. Please try again.')
+
 
             # display drinks menu
             def menu():
@@ -163,55 +194,55 @@ try:
                 while(selection !=0):
                     clearScreen()
                     print(f"{' MENU ':*^50}")
-                    print('[1]. Hot Coffees:')
+                    print('[1] Hot Coffees:')
                     if(selection == 1):
                         cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HC%'")
                         for record in cur.fetchall():
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
                     
-                    print('[2]. Cold Coffees:')
+                    print('[2] Cold Coffees:')
                     if(selection == 2):
                         cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'CC%'")
                         for record in cur.fetchall():
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
 
-                    print('[3]. Hot Teas:')
+                    print('[3] Hot Teas:')
                     if(selection == 3):
                         cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HT%'")
                         for record in cur.fetchall():
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
 
-                    print('[4]. Iced Teas:')
+                    print('[4] Iced Teas:')
                     if(selection == 4):
                         cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'IT%'")
                         for record in cur.fetchall():
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
 
-                    print('[5]. Frappucinos:')
+                    print('[5] Frappucinos:')
                     if(selection == 5):                
                         cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'F%'")
                         for record in cur.fetchall():
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
 
-                    print('[6]. Hot Drinks:')
+                    print('[6] Hot Drinks:')
                     if(selection == 6):
                         cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'HD%'")
                         for record in cur.fetchall():
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
 
-                    print('[7]. Cold Drinks:')
+                    print('[7] Cold Drinks:')
                     if(selection == 7):
                         cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'CD%'")
                         for record in cur.fetchall():
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
 
-                    print('[8]. Bakery:')
+                    print('[8] Bakery:')
                     if(selection == 8):
                         cur.execute("SELECT * FROM MenuView WHERE productid LIKE 'B%' OR productid LIKE 'HB%'")
                         for record in cur.fetchall():
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
                     
-                    print('[0]. Exit:')
+                    print('[9] Exit')
                     selection = inputHandle("Select category to see more options: ", int, [0, 8])
                     if(selection == 0):
                         break
@@ -222,19 +253,113 @@ try:
             # to show stores
             def stores():
                 print(f"{' Locations ':*^50}\n")
-                cur.execute("DROP VIEW IF EXISTS storeview")
-                cur.execute("CREATE VIEW StoreView AS SELECT shoplocation FROM shop")
-                cur.execute("SELECT * FROM storeview")
+                cur.execute("SELECT shopID, shoplocation FROM shop")
+                i = 1
+                shops = []
                 for record in cur.fetchall():
-                    print(record['shoplocation'])
+                    print(f"[{i}] {record['shoplocation']}")
+                    shops.append(record['shopid'])
+                    i += 1
+                
+                selection = inputHandle("Enter the number of the store you wish to order from: ", int, [1, i])
+                while selection is False:
+                    selection = inputHandle("Invalid input. Enter the number of the store you wish to order from: ", int, [1, i])
+                
+                return shops[selection-1]
 
 
             # order
-            def placeOrder():
-                print('What drink would you like to order?')
-                menu()
-                selection = inputHandle('Enter your selection: ', int, [1, 100])
+            def placeOrder(user):
+                shopID = stores()
 
+                flag = True
+                orderID = random.randint(1000000, 9999999)
+                while flag:
+                    orderidScript = 'SELECT orderID FROM orders WHERE orderID = %s'
+                    orderid = (orderID,)
+                    cur.execute(orderidScript, orderid)
+
+                    if len(cur.fetchall()) == 0:
+                        flag = False
+                    else:
+                        orderID = random.randint(1000000, 9999999)
+
+                cur.execute("DROP VIEW IF EXISTS shopBaristas")
+                cur.execute("DROP VIEW IF EXISTS shopCashiers")
+
+                cur.execute("CREATE VIEW shopBaristas AS SELECT * FROM barista JOIN employees ON empid = ssn")
+                cur.execute("CREATE VIEW shopCashiers AS SELECT * FROM cashiers JOIN employees ON empid = ssn")
+
+                selectBarista = "SELECT * FROM shopBaristas WHERE storeID = %s"
+                shopTuple = (shopID, )
+                cur.execute(selectBarista, shopTuple)
+
+                baristas = []
+                for record in cur.fetchall():
+                    baristas.append(record['ssn'])
+                
+                rand = random.randint(0, len(baristas)-1)
+
+                baristaID = baristas[rand]
+
+                selectCashier = "SELECT * FROM shopCashiers WHERE storeID = %s"
+                cur.execute(selectCashier, shopTuple)
+
+                cashiers = []
+                for record in cur.fetchall():
+                    cashiers.append(record['ssn'])
+
+                rand = random.randint(0, len(cashiers)-1)
+                cashierID = cashiers[rand]
+
+                totalprice = 0
+                items = []
+                quantity = []
+
+                while True:
+                    print('Check')
+                    order = input("Enter the name of the item you wish to order (enter q to end order): ")
+                    if order == 'q':
+                        break
+
+                    orderScript = 'SELECT * FROM products WHERE productname = %s'
+                    order = (order, )
+                    cur.execute(orderScript, order)
+
+                    prID = ''
+                    price = 0
+                    if len(cur.fetchall()) == 0:
+                        print('Item could not be found, please try again.')
+                        continue
+                    else:
+                        for record in cur.fetchall():
+                            prID = record['productid']
+                            price = record['price']
+                    
+                    amount = inputHandle("Enter how many of this item to order: ", int, [1, 100])
+                    while amount is False:
+                        amount = inputHandle("Invalid input. Enter how many of this item to order: ", int, [1, 100])
+
+                    totalprice += (price * amount)
+                    items.append(prID)
+                    quantity.append(amount)
+                
+                dateToday = datetime.today().strftime('%Y-%m-%d')
+                createOrder = 'INSERT INTO orders(orderid, customerid, storeid, dates, totalprice, cashierid, baristaid) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+                orderValues = (orderID, user, shopID, dateToday, totalprice, cashierID, baristaID)
+
+                cur.execute(createOrder, orderValues)
+
+                for (item, q) in zip(items, quantity):
+                    insertScript = 'INSERT INTO contain(orid, prid, quantity) VALUES(%s, %s, %s)'
+                    insertVals = (orderID, item, q)
+                    cur.execute(insertScript, insertVals)
+
+                print(f"Your order has been place, {user}! Your order should be ready in about 15-20 minutes.")
+
+
+            def cancelOrder(user):
+                pass
 
             # customer view / default view
             def custView():
@@ -244,20 +369,22 @@ try:
                 print(f"{'':*^50}\n")
                 selection = 0
                 user = ''
+                isEmployee = False
 
-                while selection != 6:
+                while selection != 7:
                     print('\nPlease choose an option')
                     print('[1] Menu')
                     print('[2] Store locations')
                     print('[3] Order')
                     print('[4] Sign in')
                     print('[5] Sign up')
-                    print('[6] Quit')
+                    print('[6] Cancel Order')
+                    print('[7] Quit')
 
-                    selection = inputHandle('Enter your selection: ', int, [1, 6])
+                    selection = inputHandle('Enter your selection: ', int, [1, 7])
                     while selection == False:
                         print('Invalid input. Please try again.')
-                        selection = inputHandle('Enter your selection: ', int, [1, 6])
+                        selection = inputHandle('Enter your selection: ', int, [1, 7])
                         
                     if selection == 1:
                         menu()
@@ -266,13 +393,35 @@ try:
                     elif selection == 3:
                         if len(user) == 0:
                             print('To order, please sign in to your account.')
+                        elif isEmployee:
+                            print('Please login to your customer account to order.')
                         else:
-                            pass
+                            placeOrder(user)
                     elif selection == 4:
-                        user = login()
+                        if len(user) == 0:
+                            print('[1] Customer Login')
+                            print('[2] Employee Login')
+                            s = inputHandle('Enter your selection: ', int, [1, 2])
+                            while s is False:
+                                print('Invalid Input. Please try again.')
+                                s = inputHandle('Enter your selection: ', int, [1, 2])
+
+                            if s == 1:
+                                user = login()
+                            else:
+                                user = emplogin()
+                                isEmployee = True
+                        else:
+                            print('You are already logged in as user: ', user)
+                            
                     elif selection == 5:
                         accCreate()
                     elif selection == 6:
+                        if len(user) == 0:
+                            print('To cancel an order, please sign in to your account.')
+                        else:
+                            cancelOrder(user)
+                    elif selection == 7:
                         print('Goodbye!\n')
                 
             # employee view
