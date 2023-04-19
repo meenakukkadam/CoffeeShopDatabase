@@ -11,6 +11,9 @@ username = 'postgres'
 pwd = 'admin'
 port_id = 5433
 
+menuSep = "*" * 50
+seperation = "=" * 50
+
 conn = None
 
 try:
@@ -122,22 +125,23 @@ try:
 
                 #output message and commit changes to database
                 print("\nUser created successfully!\n")
-                conn.commit()
-
+                
             def login():
+                print("== Customer Login ==")
                 #While loop to keep displaying menu until user has logged in
                 while True:
                     isValidUser = False     #flag to check if user input matches a user in the database
                     passw = ''              #if user was found, keep password to check input password is correct
                     # get username
                     user = input('Enter your username: ')
-
+                    fname = ''
                     #check if user exists in the database
-                    cur.execute("SELECT customerid, passw FROM customer")
+                    cur.execute("SELECT customerid, passw, fname FROM customer")
                     for record in cur.fetchall():
                         if(record['customerid'].strip() == user):
                             #if user exists, keep password and set flag to true
                             passw = record['passw']
+                            fname = record['fname']
                             isValidUser = True
                             break
                     
@@ -150,24 +154,29 @@ try:
                         else:
                             #passwords matched, output message, and return the username
                             print("Successfully logged in!")
-                            return user
+                            return user, fname
                     else: #user does not exist, return message
                         print('Username does not exist. Please try again.')
 
             def emplogin():
+                print("== Employee Login ==")
                 #While loop to keep displaying menu until user has logged in
                 while True:
                     isValidUser = False     #flag to check if user input matches a user in the database
                     passw = ''              #if user was found, keep password to check input password is correct
                     # get username
-                    ssn = input('Enter your ssn: ')
+                    ssn = inputHandle('Enter your ssn: ', int, [100000, 999999])
+                    while ssn is False:
+                        ssn = inputHandle('Invalid ssn. Enter your ssn: ', int, [100000, 999999])
 
+                    fname = ''
                     #check if user exists in the database
-                    cur.execute("SELECT ssn, passw FROM employees")
+                    cur.execute("SELECT ssn, passw, fname FROM employees")
                     for record in cur.fetchall():
-                        if(record['ssn'].strip() == ssn):
+                        if(record['ssn'] == ssn):
                             #if user exists, keep password and set flag to true
                             passw = record['passw']
+                            fname = record['fname']
                             isValidUser = True
                             break
                     
@@ -180,18 +189,17 @@ try:
                         else:
                             #passwords matched, output message, and return the username
                             print("Successfully logged in!")
-                            return ssn
+                            return ssn, fname
                     else: #user does not exist, return message
                         print('SSN does not exist. Please try again.')
 
-
-            # display drinks menu
+            # display menu
             def menu():
                 cur.execute("DROP VIEW IF EXISTS menuview")
                 cur.execute("CREATE VIEW MenuView AS SELECT productid, productname, price FROM products")
                 # selection for choosing category to see more
-                selection = 9
-                while(selection !=0):
+                selection = 0
+                while(selection != 9):
                     clearScreen()
                     print(f"{' MENU ':*^50}")
                     print('[1] Hot Coffees:')
@@ -243,34 +251,40 @@ try:
                             print('\t', record['productname'].ljust(60, '.'), record['price'])
                     
                     print('[9] Exit')
-                    selection = inputHandle("Select category to see more options: ", int, [0, 8])
-                    if(selection == 0):
-                        break
+                    selection = inputHandle("Select category to see more options: ", int, [1, 9])
                     while selection == False:
                         print('Invalid input. Please try again.')
-                        selection = inputHandle('Enter your selection: ', int, [0, 8])
+                        selection = inputHandle('Enter your selection: ', int, [1, 9])
 
             # to show stores
             def stores():
-                print(f"{' Locations ':*^50}\n")
+                print(f"{' Locations ':*^50}")
                 cur.execute("SELECT shopID, shoplocation FROM shop")
                 i = 1
                 shops = []
+                locations = []
                 for record in cur.fetchall():
                     print(f"[{i}] {record['shoplocation']}")
                     shops.append(record['shopid'])
+                    locations.append(record['shoplocation'])
                     i += 1
                 
-                selection = inputHandle("Enter the number of the store you wish to order from: ", int, [1, i])
-                while selection is False:
-                    selection = inputHandle("Invalid input. Enter the number of the store you wish to order from: ", int, [1, i])
-                
-                return shops[selection-1]
-
+                return shops, locations
 
             # order
-            def placeOrder(user):
-                shopID = stores()
+            def placeOrder(user, fname):
+                print(menuSep, "Order Menu", menuSep)
+                shops, locations = stores()
+
+                selection = inputHandle("Enter the number of the store you wish to order from: ", int, [1, len(shops)])
+                while selection is False:
+                    selection = inputHandle("Invalid input. Enter the number of the store you wish to order from: ", int, [1, len(shops)])
+                
+                shopID = shops[selection-1]
+                location = locations[selection-1]
+            
+                print(seperation)
+                print(f"Ordering To: {location}")
 
                 flag = True
                 orderID = random.randint(1000000, 9999999)
@@ -290,13 +304,13 @@ try:
                 cur.execute("CREATE VIEW shopBaristas AS SELECT * FROM barista JOIN employees ON empid = ssn")
                 cur.execute("CREATE VIEW shopCashiers AS SELECT * FROM cashiers JOIN employees ON empid = ssn")
 
-                selectBarista = "SELECT * FROM shopBaristas WHERE storeID = %s"
                 shopTuple = (shopID, )
-                cur.execute(selectBarista, shopTuple)
+                cur.execute("SELECT * FROM shopBaristas")
 
                 baristas = []
                 for record in cur.fetchall():
-                    baristas.append(record['ssn'])
+                    if record['storeid'] == shopID:
+                        baristas.append(record['ssn'])
                 
                 rand = random.randint(0, len(baristas)-1)
 
@@ -316,23 +330,23 @@ try:
                 items = []
                 quantity = []
 
-                while True:
-                    print('Check')
-                    order = input("Enter the name of the item you wish to order (enter q to end order): ")
-                    if order == 'q':
-                        break
+                order = ''
+                while order != 'n':
+                    order = input("Enter the name of the item you wish to order: ")
 
-                    orderScript = 'SELECT * FROM products WHERE productname = %s'
+                    orderScript = 'SELECT productid, price FROM products WHERE productname = %s'
                     order = (order, )
                     cur.execute(orderScript, order)
 
+                    product = cur.fetchall()
+
                     prID = ''
                     price = 0
-                    if len(cur.fetchall()) == 0:
+                    if len(product) == 0:
                         print('Item could not be found, please try again.')
                         continue
                     else:
-                        for record in cur.fetchall():
+                        for record in product:
                             prID = record['productid']
                             price = record['price']
                     
@@ -343,9 +357,13 @@ try:
                     totalprice += (price * amount)
                     items.append(prID)
                     quantity.append(amount)
+
+                    order = input("Would you like to order more items? (y/n):")
+                    order = order.lower()
+                    print(seperation)
                 
                 dateToday = datetime.today().strftime('%Y-%m-%d')
-                createOrder = 'INSERT INTO orders(orderid, customerid, storeid, dates, totalprice, cashierid, baristaid) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+                createOrder = 'INSERT INTO orders(orderid, customerid, storeid, dates, totalprice, cashierid, baristaid) VALUES(%s, %s, %s, %s, %s, %s, %s)'
                 orderValues = (orderID, user, shopID, dateToday, totalprice, cashierID, baristaID)
 
                 cur.execute(createOrder, orderValues)
@@ -355,24 +373,61 @@ try:
                     insertVals = (orderID, item, q)
                     cur.execute(insertScript, insertVals)
 
-                print(f"Your order has been place, {user}! Your order should be ready in about 15-20 minutes.")
+                print(f"\nYour order has been placed, {fname}! \
+                      \nTotal: ${totalprice}\nYour order should be ready in about 15-20 minutes.")
 
+            def cancelOrder(user, fname):
+                functionCreation = '''CREATE OR REPLACE FUNCTION delete_from_contain()
+                                    RETURNS TRIGGER LANGUAGE PLPGSQL
+                                    AS
+                                    $$
+                                    BEGIN
+                                        DELETE FROM contain WHERE orid = OLD.orderid;
+                                        RETURN OLD;
+                                    END;
+                                    $$'''
+                cur.execute(functionCreation)
+                cur.execute("CREATE OR REPLACE TRIGGER trig BEFORE DELETE ON orders FOR EACH ROW EXECUTE PROCEDURE delete_from_contain()")
+                
+                userTuple = (user, )
+                cur.execute("SELECT * FROM orders WHERE customerid = %s", userTuple)
+                orders = cur.fetchall()
+                orderlist = []
+                if len(orders) == 0:
+                    print('There are currently no orders in progress for you.')
+                else:
+                    print(f"Here are the orders in progress for you, {fname}:")
+                    for record in orders:
+                        print(f"Order: #{record['orderid']}\tDate Placed: {record['dates']}\tTotal Price: {record['totalprice']}")
+                        orderlist.append(str(record['orderid']))
 
-            def cancelOrder(user):
-                pass
-
+                    print()
+                    selection = input("Enter the order number you wish to cancel (enter q to cancel): ")
+                    while selection != 'q':
+                        if selection not in orderlist:
+                            selection = input("Order Number does not exist, please try again. \
+                                              \nEnter the order number you wish to cancel (enter q to cancel): ")
+                        else:
+                            selecTuple = (selection, )
+                            cur.execute("DELETE FROM orders WHERE orderid = %s", selecTuple)
+                            print(f"\nOrder #{selection} successfully cancelled! A refund will be issued to you shortly.")
+                            break
+                
             # customer view / default view
             def custView():
-                # print(f'{"geeks" :*>15}')
                 print(f"{'':*^50}")
                 print(f"{' Welcome to Postgres Coffee! ':*^50}")
                 print(f"{'':*^50}\n")
                 selection = 0
                 user = ''
+                fname = ''
                 isEmployee = False
 
                 while selection != 7:
-                    print('\nPlease choose an option')
+                    print('\n** Postgres Coffee **')
+                    if len(fname) != 0:
+                        print(f'Welcome Back, {fname}!')
+                    print('Please choose an option')
                     print('[1] Menu')
                     print('[2] Store locations')
                     print('[3] Order')
@@ -385,20 +440,27 @@ try:
                     while selection == False:
                         print('Invalid input. Please try again.')
                         selection = inputHandle('Enter your selection: ', int, [1, 7])
-                        
+                    
+                    print()
+
                     if selection == 1:
                         menu()
+                        print(menuSep)
                     elif selection == 2:
                         stores()
+                        print(menuSep)
                     elif selection == 3:
-                        if len(user) == 0:
-                            print('To order, please sign in to your account.')
-                        elif isEmployee:
+                        if isEmployee:
                             print('Please login to your customer account to order.')
+                        elif len(user) == 0:
+                            print('To order, please sign in to your account.')
                         else:
-                            placeOrder(user)
+                            placeOrder(user, fname)
+
+                        print(menuSep)
                     elif selection == 4:
                         if len(user) == 0:
+                            print(seperation)
                             print('[1] Customer Login')
                             print('[2] Employee Login')
                             s = inputHandle('Enter your selection: ', int, [1, 2])
@@ -407,22 +469,30 @@ try:
                                 s = inputHandle('Enter your selection: ', int, [1, 2])
 
                             if s == 1:
-                                user = login()
+                                print(seperation)
+                                user, fname = login()
                             else:
-                                user = emplogin()
+                                print(seperation)
+                                user, fname = emplogin()
                                 isEmployee = True
+                            print(menuSep)
                         else:
                             print('You are already logged in as user: ', user)
-                            
+                            print(menuSep)
                     elif selection == 5:
                         accCreate()
+                        print(menuSep)
                     elif selection == 6:
                         if len(user) == 0:
                             print('To cancel an order, please sign in to your account.')
                         else:
-                            cancelOrder(user)
+                            cancelOrder(user, fname)
+                        
+                        print(menuSep)
                     elif selection == 7:
                         print('Goodbye!\n')
+                    
+                    conn.commit()
                 
             # employee view
             def empView():
