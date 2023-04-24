@@ -2,7 +2,8 @@ CREATE TABLE products (
 	productID varchar(10) PRIMARY KEY,
 	productname varchar(60),
 	price DECIMAL(10,2),
-	productcost DECIMAL(10,2)
+	productcost DECIMAL(10,2),
+	stock integer
 );
 
 CREATE TABLE owners (
@@ -33,13 +34,6 @@ CREATE TABLE customer (
 	DOB date,
 	phoneNumber bigint,
 	balance decimal(10,2)
-);
-
-CREATE TABLE inventory (
-	StID integer REFERENCES shop,
-	PrID varchar(10) REFERENCES products,
-	stock integer,
-	CONSTRAINT inventory_pk PRIMARY KEY(StID, PrID)
 );
 
 CREATE TABLE employees (
