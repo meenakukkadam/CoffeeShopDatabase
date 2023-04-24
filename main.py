@@ -26,7 +26,9 @@ try:
                 while True:
                     #flag for valid username, take username input
                     isValidUser = True
-                    user = input('Enter your preferred username (max 10 characters): ') 
+                    user = inputHandle('Enter your preferred username (max 10 characters): ', str, [0,1])
+                    while user is False:
+                        user = inputHandle('Invalid Input. Enter your preferred username (max 10 characters): ', str, [0,1])
                     
                     #check if username matches the size in the database
                     if(len(user) > 10):
@@ -42,52 +44,63 @@ try:
                         #if the username is new, ask for input values
                         if(isValidUser):
                             #input password, check for correct length, and confirm password with the user
-                            passw = input('Enter your preferred password: ')
+                            passw = inputHandle('Enter your preferred password: ', str, [0,1])
+                        
                             while True:
-                                if len(passw) > 30:
+                                if passw is False:
+                                    passw = inputHandle('Invalid Input. Enter your preferred password: ', str, [0,1])
+                                elif len(passw) > 30:
                                     print('Password must be less than 30 characters, please try again.')
-                                    passw = input('Enter your preferred password: ')
+                                    passw = inputHandle('Enter your preferred password: ', str, [0,1])
                                 else:
                                     pass2 = input('Confirm password: ')
                                     if passw != pass2:
                                         print('Passwords do not match, please try again.')
-                                        passw = input('Enter your preferred password: ')
+                                        passw = inputHandle('Enter your preferred password: ', str, [0,1])
                                     else:
                                         break
                             
                             #input first name and check for correct length
-                            fname = input('Enter your first name: ')
+                            fname = inputHandle('Enter your first name: ', str, [0,1])
                             while True:
-                                if(len(fname) > 30):
+                                if fname is False:
+                                    fname = inputHandle('Invalid Input. Enter your first name: ', str, [0,1])
+                                elif(len(fname) > 30):
                                     print('First name must be less than 30 characters, please try again.')
-                                    fname = input('Enter your first name: ')
+                                    fname = inputHandle('Enter your first name: ', str, [0,1])
                                 else:
                                     break
                             
                             #input last name and check for correct length
-                            lname = input('Enter your last name: ')
+                            lname = inputHandle('Enter your last name: ', str, [0,1])
                             while True:
-                                if(len(lname) > 30):
+                                if lname is False:
+                                    lname = inputHandle('Invalid Input. Enter your last name: ', str, [0,1])
+                                elif(len(lname) > 30):
                                     print('Last name must be less than 30 characters, please try again.')
-                                    lname = input('Enter your last name: ')
+                                    lname = inputHandle('Enter your last name: ', str, [0,1])
                                 else:
                                     break
                                 
                             #input addresss and check for correct length
-                            addr = input('Enter your address: ')
+                            addr = inputHandle('Enter your address: ', str, [0,1])
                             while True:
-                                if(len(addr) > 50):
+                                if addr is False:
+                                    addr = inputHandle('Invalid Input. Enter your address: ', str, [0,1])
+                                elif(len(addr) > 50):
                                     print('Address must be less than 50 characters, please try again.')
-                                    addr = input('Enter your address: ')
+                                    addr = inputHandle('Enter your address: ', str, [0,1])
                                 else:
                                     break
                             
                             #input email and check for correct length
-                            email = input('Enter your email: ')
+                            email = inputHandle('Enter your email: ', str, [0,1])
                             while True:
-                                if(len(email) > 30):
+                                if email is False:
+                                    email = inputHandle('Invalid Input. Enter your email: ', str, [0,1])
+                                elif(len(email) > 30):
                                     print('Email must be less than 30 characters, please try again.')
-                                    email = input('Enter your email: ')
+                                    email = inputHandle('Enter your email: ', str, [0,1])
                                 else:
                                     break
                             
@@ -134,6 +147,7 @@ try:
                     passw = ''              #if user was found, keep password to check input password is correct
                     # get username
                     user = input('Enter your username: ')
+
                     fname = ''
                     #check if user exists in the database
                     cur.execute("SELECT customerid, passw, fname FROM customer")
@@ -327,14 +341,20 @@ try:
                 cashierID = cashiers[rand]
 
                 totalprice = 0
+                productCosts = 0
                 items = []
                 quantity = []
+                
+
 
                 order = ''
                 while order != 'n':
-                    order = input("Enter the name of the item you wish to order: ")
-
-                    orderScript = 'SELECT productid, price FROM products WHERE productname = %s'
+                    # add display menu option
+                    order = inputHandle("Enter the name of the item you wish to order: ", str, [0,1])
+                    while order is False:
+                        order = inputHandle("Invalid input. Enter the name of the item you wish to order: ", str, [0,1])
+                    #check if stock is out !!
+                    orderScript = 'SELECT productid, price, productcost FROM products WHERE productname = %s'
                     order = (order, )
                     cur.execute(orderScript, order)
 
@@ -342,6 +362,7 @@ try:
 
                     prID = ''
                     price = 0
+                    cost = 0
                     if len(product) == 0:
                         print('Item could not be found, please try again.')
                         continue
@@ -349,11 +370,13 @@ try:
                         for record in product:
                             prID = record['productid']
                             price = record['price']
+                            cost = record['productcost']
                     
                     amount = inputHandle("Enter how many of this item to order: ", int, [1, 100])
                     while amount is False:
                         amount = inputHandle("Invalid input. Enter how many of this item to order: ", int, [1, 100])
-
+                    
+                    productCosts += (cost * amount)
                     totalprice += (price * amount)
                     items.append(prID)
                     quantity.append(amount)
@@ -372,6 +395,14 @@ try:
                     insertScript = 'INSERT INTO contain(orid, prid, quantity) VALUES(%s, %s, %s)'
                     insertVals = (orderID, item, q)
                     cur.execute(insertScript, insertVals)
+
+                profit = totalprice - productCosts
+
+                cur.execute("SELECT revenue FROM shop WHERE shopid = %s", (shopID,))
+                fetch = cur.fetchall()
+                revenue = fetch[0][0]
+                newrevenue = revenue + profit
+                cur.execute("UPDATE shop SET revenue = %s WHERE shopID = %s", (newrevenue, shopID))
 
                 print(f"\nYour order has been placed, {fname}! \
                       \nTotal: ${totalprice}\nYour order should be ready in about 15-20 minutes.")
@@ -412,18 +443,16 @@ try:
                             cur.execute("DELETE FROM orders WHERE orderid = %s", selecTuple)
                             print(f"\nOrder #{selection} successfully cancelled! A refund will be issued to you shortly.")
                             break
-                
-            # customer view / default view
-            def custView():
-                print(f"{'':*^50}")
-                print(f"{' Welcome to Postgres Coffee! ':*^50}")
-                print(f"{'':*^50}\n")
-                selection = 0
-                user = ''
-                fname = ''
-                isEmployee = False
+            
+            def empView():
+                pass
 
-                while selection != 7:
+            # customer view
+            def custView(user, fname):
+                selection = 0
+                signOut = False
+
+                while selection != 6:
                     print('\n** Postgres Coffee **')
                     if len(fname) != 0:
                         print(f'Welcome Back, {fname}!')
@@ -431,15 +460,14 @@ try:
                     print('[1] Menu')
                     print('[2] Store locations')
                     print('[3] Order')
-                    print('[4] Sign in')
-                    print('[5] Sign up')
-                    print('[6] Cancel Order')
-                    print('[7] Quit')
+                    print('[4] Cancel Order')
+                    print('[5] Sign Out')
+                    print('[6] Quit')
 
-                    selection = inputHandle('Enter your selection: ', int, [1, 7])
+                    selection = inputHandle('Enter your selection: ', int, [1, 6])
                     while selection == False:
                         print('Invalid input. Please try again.')
-                        selection = inputHandle('Enter your selection: ', int, [1, 7])
+                        selection = inputHandle('Enter your selection: ', int, [1, 6])
                     
                     print()
 
@@ -450,59 +478,90 @@ try:
                         stores()
                         print(menuSep)
                     elif selection == 3:
-                        if isEmployee:
-                            print('Please login to your customer account to order.')
-                        elif len(user) == 0:
-                            print('To order, please sign in to your account.')
-                        else:
-                            placeOrder(user, fname)
-
+                        placeOrder(user, fname)
                         print(menuSep)
                     elif selection == 4:
-                        if len(user) == 0:
-                            print(seperation)
-                            print('[1] Customer Login')
-                            print('[2] Employee Login')
-                            s = inputHandle('Enter your selection: ', int, [1, 2])
-                            while s is False:
-                                print('Invalid Input. Please try again.')
-                                s = inputHandle('Enter your selection: ', int, [1, 2])
-
-                            if s == 1:
-                                print(seperation)
-                                user, fname = login()
-                            else:
-                                print(seperation)
-                                user, fname = emplogin()
-                                isEmployee = True
-                            print(menuSep)
-                        else:
-                            print('You are already logged in as user: ', user)
-                            print(menuSep)
+                        cancelOrder(user, fname)
+                        print(menuSep)
                     elif selection == 5:
-                        accCreate()
-                        print(menuSep)
+                        print('Signing Out...\n')
+                        signOut = True
+                        break
                     elif selection == 6:
-                        if len(user) == 0:
-                            print('To cancel an order, please sign in to your account.')
-                        else:
-                            cancelOrder(user, fname)
-                        
-                        print(menuSep)
-                    elif selection == 7:
                         print('Goodbye!\n')
                     
                     conn.commit()
                 
-            # employee view
-            def empView():
-                pass
+                if signOut:
+                    guestView()
 
+            # guest view / default view
+            def guestView():
+                print(f"{'':*^50}")
+                print(f"{' Welcome to Postgres Coffee! ':*^50}")
+                print(f"{'':*^50}\n")
+                selection = 0
+                user = ''
+                fname = ''
+                isEmployee = False
+                
+                while selection != 5:
+                    print('\n** Postgres Coffee **')
+                    print('Please choose an option')
+                    print('[1] Menu')
+                    print('[2] Store locations')
+                    print('[3] Sign in')
+                    print('[4] Sign up')
+                    print('[5] Quit')
+
+                    selection = inputHandle('Enter your selection: ', int, [1, 5])
+                    while selection == False:
+                        print('Invalid input. Please try again.')
+                        selection = inputHandle('Enter your selection: ', int, [1, 5])
+                    
+                    print()
+
+                    if selection == 1:
+                        menu()
+                        print(menuSep)
+                    elif selection == 2:
+                        stores()
+                        print(menuSep)
+                    elif selection == 3:
+                        print(seperation)
+                        print('[1] Customer Login')
+                        print('[2] Employee Login')
+                        s = inputHandle('Enter your selection: ', int, [1, 2])
+                        while s is False:
+                            print('Invalid Input. Please try again.')
+                            s = inputHandle('Enter your selection: ', int, [1, 2])
+
+                        if s == 1:
+                            print(seperation)
+                            user, fname = login()
+                            print(menuSep)
+                            break
+                        else:
+                            print(seperation)
+                            user, fname = emplogin()
+                            isEmployee = True
+                            print(menuSep)
+                    elif selection == 4:
+                        accCreate()
+                        print(menuSep)
+                    elif selection == 5:
+                        print('Goodbye!\n')
+                    
+                    conn.commit()
+                
+                if len(user) != 0:
+                    custView(user, fname)
+                
             # ------------------------ HELPER FUNCTIONS ------------------------
             # clear screen
             def clearScreen():
                 os.system('clear')
-
+            
             # handle user selection
             def inputHandle(text, typeCast, range):
                 # print(data)
@@ -515,13 +574,18 @@ try:
                         return False
                     else:
                         break # break loop
-                if (data >= range[0] and data <= range[1]):
+                if typeCast == int and (data >= range[0] and data <= range[1]):
                     return data
+                if typeCast == str:
+                    if '--' in data:
+                        return False
+                    else:
+                        return data
                 else:
                     return False
             
             def main():
-                custView()
+                guestView()
 
                 return()
 
