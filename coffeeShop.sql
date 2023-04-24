@@ -24,6 +24,20 @@ CREATE TABLE shop (
 	revenue integer
 );
 
+CREATE TABLE supplier (
+    supplierID integer PRIMARY KEY,
+    suppAddress varchar(50),
+    fname varchar(30)
+);
+
+CREATE TABLE supplies (
+    shopID integer REFERENCES shop,
+    productID varchar(10) REFERENCES products,
+    restockDate date,
+    restockAmnt integer,
+    CONSTRAINT supplies_pk PRIMARY KEY(shopID, restockDate)
+);
+
 CREATE TABLE customer (
 	customerID char(10) PRIMARY KEY,
 	passw varchar(30),
