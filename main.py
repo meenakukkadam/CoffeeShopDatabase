@@ -15,10 +15,10 @@ import random # for creating random ids
 
 # database information for use in connection
 hostname = 'localhost'
-database = 'CoffeeShop'
-username = 'postgres'
-pwd = 'admin'
-port_id = 5433
+database = 'coffeeshop'
+username = 'din'
+pwd = '123'
+port_id = 5432
 
 # seperators
 menuSep = "*" * 50
@@ -525,9 +525,7 @@ try:
                             print(f"\nOrder #{selection} successfully cancelled! A refund will be issued to you shortly.")
                             break
             
-            # employee menu
-            def empView():
-                pass
+            
 
             # customer menu, takes in username and first name of the customer logged in
             def custView(user, fname):
@@ -635,9 +633,127 @@ try:
                     conn.commit()
                 
                 if isEmployee:
-                    empView()
+                    empView(user, fname)
                 elif len(fname) != 0:
                     custView(user, fname)
+
+            # employee view 
+            def empView(ssn, fname):
+                selection = 0
+                signOut = False
+                while selection != 6:
+                    print('\n** Postgres Coffee **')
+                    if len(fname) != 0:
+                            print(f'Welcome Back, {fname}!')
+                    print('\nPlease choose an option')
+                    print('[1] Menu')
+                    print('[2] View Order')
+                    print('[3] Cancel Order')
+                    print('[4] Profile')
+                    print('[5] Sign Out')
+                    print('[6] Quit')
+
+                    selection = inputHandle('Enter your selection: ', int, [1, 6])
+                    while selection == False:
+                            print('Invalid input. Please try again.')
+                            selection = inputHandle('Enter your selection: ', int, [1, 6])
+                    
+                    print()
+
+                    if selection == 1:
+                        menu()
+                    elif selection ==2:
+                        #see orders in the stores
+                        emplViewOrder(ssn)
+                    elif selection ==3:
+                        #cancel order
+                        emplCancelOrderView(ssn)
+                        pass
+                    elif selection ==4:
+                        #see profile
+                        emplProfile(ssn)
+                    elif selection ==5:
+                        print('Signing Out...\n')
+                        signOut = True
+                        break
+                    elif selection ==6:
+                        print('Goodbye!\n')
+                    
+                    conn.commit()
+                    
+                if signOut:
+                    guestView()
+                        
+            def emplViewOrder(ssn):
+                # get the storeID of the employee
+                cur.execute("SELECT storeid FROM employees WHERE ssn = %s", (ssn, ))
+                print(menuSep, "View Order", menuSep)
+                storeID = cur.fetchone()['storeid']#clear space
+                # get store location
+                cur.execute("SELECT shoplocation FROM shop WHERE shopid = %s", (storeID,))
+                location = cur.fetchone()['shoplocation']
+                print("Order at store:", location)
+                # get orders at store
+                order = "SELECT * FROM orders o, customer c WHERE storeID = %s AND o.customerid = c.customerid"
+                #  orderid | customerid | storeid |   dates    | totalprice | cashierid | baristaid | customerid | passw  |  fname  | lname | customeraddress |          email          |    dob     | phonenumber | balance 
+                #  6223451 | 100002     |    6542 | 2023-04-24 |       2.75 |    312993 |    312994 | 100002     | abc123 | Michael | Smith | 456 Oak Ave     | michael.smith@gmail.com | 1988-08-20 |  5552345678 | 2500.00
+                cur.execute(order,(storeID, ))
+                print(f"{'Order':<10} {'Name':<42} {'ID':<10} {'Total':<12} {'CashierID':<12} {'BaristaID':<12} {'Dates'}")
+                for record in cur.fetchall():
+                    #python sucks at printing date with string padding so I used this
+                    print("{:<10} {:<42} {:<10} {:<12} {:<12} {:<12} {}".format(record['orderid'],record['fname'], record['customerid'],record['totalprice'],record['cashierid'],record['baristaid'],record['dates']))
+
+            def emplCancelOrderView(ssn):
+                emplViewOrder(ssn)
+                functionCreation = '''CREATE OR REPLACE FUNCTION delete_from_contain()
+                                    RETURNS TRIGGER LANGUAGE PLPGSQL
+                                    AS
+                                    $$
+                                    BEGIN
+                                        DELETE FROM contain WHERE orid = OLD.orderid;
+                                        RETURN OLD;
+                                    END;
+                                    $$'''
+                cur.execute(functionCreation)
+                cur.execute("CREATE OR REPLACE TRIGGER trig BEFORE DELETE ON orders FOR EACH ROW EXECUTE PROCEDURE delete_from_contain()")
+                
+                cur.execute("SELECT storeid FROM employees WHERE ssn = %s", (ssn, ))
+                storeID = cur.fetchone()['storeid']#clear space
+                # get orders at store
+                order = "SELECT * FROM orders o, customer c WHERE storeID = %s AND o.customerid = c.customerid"
+                #  orderid | customerid | storeid |   dates    | totalprice | cashierid | baristaid | customerid | passw  |  fname  | lname | customeraddress |          email          |    dob     | phonenumber | balance 
+                #  6223451 | 100002     |    6542 | 2023-04-24 |       2.75 |    312993 |    312994 | 100002     | abc123 | Michael | Smith | 456 Oak Ave     | michael.smith@gmail.com | 1988-08-20 |  5552345678 | 2500.00
+                cur.execute(order,(storeID, ))
+                orderlist = []
+
+                for record in cur.fetchall():
+                    orderlist.append(str(record['orderid'])) 
+
+                selection = input("Enter order ID to cancel (enter q to quit): ")
+                while selection != 'q':
+                    if selection not in orderlist:
+                        selection = input("Invalid order ID, please enter order ID again to cancel: (enter q to quit): ")
+                    else:
+                        selecTuple = (selection, )
+                        cur.execute("DELETE FROM orders WHERE orderid = %s", selecTuple)
+                        print(f"\nOrder #{selection} successfully cancelled! A refund will be issued to you shortly.")
+                        break
+
+            def emplProfile(ssn):
+                clearScreen()
+                cur.execute("DROP VIEW IF EXISTS emplProfileView")
+                cur.execute("CREATE VIEW emplProfileView AS SELECT ssn, fname, lname, empaddress, email, dob, phonenumber, storeid, passw, salary FROM employees, employs WHERE ssn = %s AND empid = %s", (ssn,ssn, ))
+#                  ssn   |  fname  | lname |              empaddress              |          email          |    dob     | phonenumber | storeid |    passw     | salary  
+#                --------+---------+-------+--------------------------------------+-------------------------+------------+-------------+---------+--------------+---------
+#                 312993 | William | Jones | 98637 Maple Avenue, Fresno, CA 90005 | William.Jones@gmail.com | 1992-01-18 |  3125550195 |    6542 | 123456qwerty | 5000.00
+                print(seperation)
+                print("Your prile information is:\n")
+                cur.execute("SELECT * FROM emplProfileView")
+                profile = cur.fetchone()
+                # print(profile['ssn'])
+                for key, value in profile.items():
+                    print(key, ": ", value)
+
                 
             # ------------------------ HELPER FUNCTIONS ------------------------
             # clear screen
