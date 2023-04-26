@@ -31,11 +31,11 @@ CREATE TABLE supplier (
 );
 
 CREATE TABLE supplies (
-    shopID integer REFERENCES shop,
+	supplierID integer REFERENCES supplier,
     productID varchar(10) REFERENCES products,
     restockDate date,
     restockAmnt integer,
-    CONSTRAINT supplies_pk PRIMARY KEY(shopID, restockDate)
+    CONSTRAINT supplies_pk PRIMARY KEY(supplierID, productID, restockDate)
 );
 
 CREATE TABLE customer (
