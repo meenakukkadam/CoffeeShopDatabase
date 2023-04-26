@@ -12,6 +12,8 @@ import psycopg2.extras # for returning data as dictionaries
 import os # for clearing the terminal screen
 from datetime import datetime # for confirming dates match format
 import random # for creating random ids
+import re    # for checking email
+
 
 # database information for use in connection
 hostname = 'localhost'
@@ -661,6 +663,7 @@ try:
                     print()
 
                     if selection == 1:
+                        # see menu
                         menu()
                     elif selection ==2:
                         #see orders in the stores
@@ -673,10 +676,12 @@ try:
                         #see profile
                         emplProfile(ssn)
                     elif selection ==5:
+                        #sign out
                         print('Signing Out...\n')
                         signOut = True
                         break
                     elif selection ==6:
+                        #quit
                         print('Goodbye!\n')
                     
                     conn.commit()
@@ -695,16 +700,22 @@ try:
                 print("Order at store:", location)
                 # get orders at store
                 order = "SELECT * FROM orders o, customer c WHERE storeID = %s AND o.customerid = c.customerid"
+                # table from this query
                 #  orderid | customerid | storeid |   dates    | totalprice | cashierid | baristaid | customerid | passw  |  fname  | lname | customeraddress |          email          |    dob     | phonenumber | balance 
                 #  6223451 | 100002     |    6542 | 2023-04-24 |       2.75 |    312993 |    312994 | 100002     | abc123 | Michael | Smith | 456 Oak Ave     | michael.smith@gmail.com | 1988-08-20 |  5552345678 | 2500.00
                 cur.execute(order,(storeID, ))
+                
+                # print orders
                 print(f"{'Order':<10} {'Name':<42} {'ID':<10} {'Total':<12} {'CashierID':<12} {'BaristaID':<12} {'Dates'}")
                 for record in cur.fetchall():
                     #python sucks at printing date with string padding so I used this
                     print("{:<10} {:<42} {:<10} {:<12} {:<12} {:<12} {}".format(record['orderid'],record['fname'], record['customerid'],record['totalprice'],record['cashierid'],record['baristaid'],record['dates']))
 
+            # func for employesss to cancel order at their store, needs empl's SSN
             def emplCancelOrderView(ssn):
+                # Display the current menu first
                 emplViewOrder(ssn)
+                # create function to delete from contain table
                 functionCreation = '''CREATE OR REPLACE FUNCTION delete_from_contain()
                                     RETURNS TRIGGER LANGUAGE PLPGSQL
                                     AS
@@ -715,45 +726,171 @@ try:
                                     END;
                                     $$'''
                 cur.execute(functionCreation)
+                # create trigger to call delete_from_contain() function before delete from orders table
                 cur.execute("CREATE OR REPLACE TRIGGER trig BEFORE DELETE ON orders FOR EACH ROW EXECUTE PROCEDURE delete_from_contain()")
                 
+                # this part is to get all order numbers and store in orderlist
+                # get store of the emplyee
                 cur.execute("SELECT storeid FROM employees WHERE ssn = %s", (ssn, ))
-                storeID = cur.fetchone()['storeid']#clear space
+                storeID = cur.fetchone()['storeid']
                 # get orders at store
                 order = "SELECT * FROM orders o, customer c WHERE storeID = %s AND o.customerid = c.customerid"
                 #  orderid | customerid | storeid |   dates    | totalprice | cashierid | baristaid | customerid | passw  |  fname  | lname | customeraddress |          email          |    dob     | phonenumber | balance 
                 #  6223451 | 100002     |    6542 | 2023-04-24 |       2.75 |    312993 |    312994 | 100002     | abc123 | Michael | Smith | 456 Oak Ave     | michael.smith@gmail.com | 1988-08-20 |  5552345678 | 2500.00
                 cur.execute(order,(storeID, ))
+                # create list of order in store
                 orderlist = []
-
+                # store order numbers of this store in the list
                 for record in cur.fetchall():
                     orderlist.append(str(record['orderid'])) 
 
+                # employee enter order id to canel, q to exit
                 selection = input("Enter order ID to cancel (enter q to quit): ")
                 while selection != 'q':
+                    # not valid order, re enter
                     if selection not in orderlist:
                         selection = input("Invalid order ID, please enter order ID again to cancel: (enter q to quit): ")
                     else:
+                        # success deleting
                         selecTuple = (selection, )
                         cur.execute("DELETE FROM orders WHERE orderid = %s", selecTuple)
                         print(f"\nOrder #{selection} successfully cancelled! A refund will be issued to you shortly.")
                         break
-
+            
+            # function for employees to view their profile, parameter: SSN
             def emplProfile(ssn):
                 clearScreen()
                 cur.execute("DROP VIEW IF EXISTS emplProfileView")
                 cur.execute("CREATE VIEW emplProfileView AS SELECT ssn, fname, lname, empaddress, email, dob, phonenumber, storeid, passw, salary FROM employees, employs WHERE ssn = %s AND empid = %s", (ssn,ssn, ))
+                # table of view
 #                  ssn   |  fname  | lname |              empaddress              |          email          |    dob     | phonenumber | storeid |    passw     | salary  
 #                --------+---------+-------+--------------------------------------+-------------------------+------------+-------------+---------+--------------+---------
 #                 312993 | William | Jones | 98637 Maple Avenue, Fresno, CA 90005 | William.Jones@gmail.com | 1992-01-18 |  3125550195 |    6542 | 123456qwerty | 5000.00
+                
+                # decoration
                 print(seperation)
                 print("Your prile information is:\n")
+
+                # print profile
                 cur.execute("SELECT * FROM emplProfileView")
                 profile = cur.fetchone()
                 # print(profile['ssn'])
-                for key, value in profile.items():
-                    print(key, ": ", value)
+                print(f"len profile {len(profile)}")
+                for index, (key, value) in enumerate(profile.items()):
+                    print("[{}]".format(index if index < len(profile)-1 and index > 0 else " "),key, ": ", value)
+                # print following:
+                # [ ] ssn :  312993
+                # [1] fname :  William
+                # [2] lname :  Jones
+                # [3] empaddress :  98637 Maple Avenue, Fresno, CA 90005
+                # [4] email :  William.Jones@gmail.com
+                # [5] dob :  1992-01-18
+                # [6] phonenumber :  3125550195
+                # [7] storeid :  6542
+                # [8] passw :  hellokitty
+                # [ ] salary :  5000.00
 
+                # choose whether want to update profile
+                selection = inputHandle("Enter the number of the information you wish to update (0 to exit): ", int, [0, len(profile)-1])
+                while selection is False:
+                    selection = inputHandle("Inavlid Input\nEnter the number of the information you wish to update (0 to exit): ", int, [0, len(profile)-1])
+                
+                if(selection != 0):
+                    # update enter first name
+                    if(selection == 1):
+                        update = inputHandle("Enter you first name: ", str, [0, 30])
+                        if update == False:
+                            print("Name is too long or too short")
+                        else:
+                            cur.execute("UPDATE employees SET fname = %s WHERE ssn = %s", (update, ssn,))
+                            print("Successfully updated")
+                    # update last name
+                    elif(selection == 2):
+                        update = inputHandle("Enter you last name: ", str, [0, 30])
+                        if update == False:
+                            print("Name is too long or too short")
+                        else:
+                            cur.execute("UPDATE employees SET lname = %s WHERE ssn = %s", (update, ssn,))
+                            print("Successfully updated")
+                    # update address
+                    elif(selection == 3):
+                        update = inputHandle("Enter you address: ", str, [0, 50])
+                        if update == False:
+                            print("Address is too long or too short")
+                        else:
+                            cur.execute("UPDATE employees SET empaddress = %s WHERE ssn = %s", (update, ssn,))
+                            print("Successfully updated")
+                    # update email
+                    elif(selection == 4):
+                        update = inputHandle("Enter you email: ", str, [0, 50])
+                        if update == False:
+                            print("Email is too long or too short")
+                        else:
+                            # regex matching an email (online src)
+                            regex = '[^@]+@[^@]+\.[^@]+'
+
+                            if(re.search(regex,update)):   
+                                print("Valid Email")
+                                cur.execute("UPDATE employees SET email = %s WHERE ssn = %s", (update, ssn,))
+                                print("Successfully updated")
+                            else:   
+                                print("Invalid Email")
+                    # update DOB
+                    elif(selection == 5):
+                        update = input('Enter your date of birth (yyyy-mm-dd): ')
+                        format = "%Y-%m-%d"     #format required for database
+                        validDate = False       #flag to check for valid format
+                        #while loop to check for correct format
+                        while not validDate:
+                            # try block to catch errors returned by datetime
+                            try:
+                                #call strptime to check for valid format, set validDate to bool value returned
+                                validDate = bool(datetime.strptime(update, format))
+                            except ValueError:
+                                #dob does not match format
+                                validDate = False
+                            
+                            #if dob does not match format, output message and take input again
+                            if not validDate:
+                                print("Invalid input. Please try again.")
+                                update = input('Enter your date of birth (yyyy-mm-dd): ')
+                        
+                        print("DOB to be updated: ", update)
+                        cur.execute("UPDATE employees SET dob = %s WHERE ssn = %s", (update, ssn,))
+                        print("Successfully updated")
+                    # update phonenumber, 10 numbers
+                    elif(selection == 6):
+                        update = inputHandle('Enter your phone number (no dashes): ', int, [0000000000, 9999999999])
+                        if update is False:
+                            print("Phone number is too long or too short")
+                        else:
+                            print("New phone number is: ", update)
+                            cur.execute("UPDATE employees SET phonenumber = %s WHERE ssn = %s", (update, ssn,))
+                            print("Successfully updated")
+                    # employer update this field
+                    elif(selection == 7):
+                        print("Please contact empolyer to update this field")
+                    # update password
+                    elif(selection == 8):
+                        # input password, check for correct length, and confirm password with the user
+                        # q for exit
+                        passw = inputHandle('Enter your preferred password (max 30 characters) (q to exit): ', str, [1,30])
+                        # while input != q
+                        while passw != 'q':
+                            if passw is False:
+                                passw = inputHandle('Invalid Input. Enter your preferred password (max 30 characters): ', str, [1,30])
+                            else:
+                                pass2 = input('Confirm password: ')
+                                if passw != pass2:
+                                    print('Passwords do not match, please try again.')
+                                    passw = inputHandle('Enter your preferred password (q to exit): ', str, [1,30])
+                                else:
+                                    break
+                        # if input != q
+                        if passw != 'q':
+                            cur.execute("UPDATE employees SET passw = %s WHERE ssn = %s", (passw, ssn,))
+                            print("Successfully updated")
+                        
                 
             # ------------------------ HELPER FUNCTIONS ------------------------
             # clear screen
