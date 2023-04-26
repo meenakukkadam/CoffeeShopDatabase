@@ -8,19 +8,19 @@ can order more stock from suppliers.
 # this program uses the psycopg2 library to connect to a postgres database
 # install psycopg2-binary: https://bobbyhadz.com/blog/python-no-module-named-psycopg2
 import psycopg2
-import psycopg2.extras # for returning data as dictionaries
-import os # for clearing the terminal screen
-from datetime import datetime # for confirming dates match format
-import random # for creating random ids
-import re    # for checking email
-
+import psycopg2.extras  # for returning data as dictionaries
+import os   # for clearing the terminal screen
+from datetime import datetime   # for confirming dates match format
+import random   # for creating random ids
+import re       # for checking email
+import time     # for simulating tiny delays at login, logout, and account creation
 
 # database information for use in connection
 hostname = 'localhost'
-database = 'coffeeshop'
-username = 'din'
-pwd = '123'
-port_id = 5432
+database = 'CoffeeShop'
+username = 'postgres'
+pwd = 'admin'
+port_id = 5433
 
 # seperators
 menuSep = "*" * 50
@@ -39,6 +39,8 @@ try:
             
             # function to create a customer account
             def accCreate():
+                clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
                 # While loop to keep displaying menu until user has been created
                 while True:
                     # flag for valid username
@@ -87,11 +89,12 @@ try:
                         addr = inputHandle('Enter your address (max 50 characters): ', str, [1,50])
                         while addr is False:
                             addr = inputHandle('Invalid Input. Enter your address (max 50 characters): ', str, [1,50])
-                            
-                        #input email and check for correct length
+                        
+                        # input email and check for correct length and format
+                        regex = '[^@]+@[^@]+\.[^@]+'
                         email = inputHandle('Enter your email (max 30 characters): ', str, [1,30])
-                        while email is False:
-                            email = inputHandle('Invalid Input. Enter your email (max 30 characters): ', str, [1,30])
+                        while email is False or not re.search(regex, email):
+                            email = inputHandle('Invalid Email. Enter your email (max 30 characters): ', str, [1,30])
                         
                         #input date of birth in requested format
                         dob = input('Enter your date of birth (yyyy-mm-dd): ')
@@ -126,11 +129,15 @@ try:
                         #user already exists, output message
                         print('Username already exists, please try again')
 
+                print("Creating account...\n")
+                time.sleep(2)
                 #output message and commit changes to database
-                print("\nUser created successfully!\n")
+                print("User created successfully!\n")
             
             # functions for customer login, returns username and first name of the customer
             def login():
+                clearScreen()                
+                print(menuSep, " Postgres Coffee ", menuSep)
                 print("== Customer Login ==")
                 # while loop to keep displaying menu until user has logged in or decided to quit
                 quit = 'y'
@@ -160,6 +167,8 @@ try:
                             quit = input("Would you like to try again? Enter 'n' to quit: ")
                             quit.lower()
                         else:
+                            print("Logging in...\n")
+                            time.sleep(2)
                             #passwords matched, output message, and return the username and first name
                             print("Successfully logged in!")
                             return user, fname
@@ -173,6 +182,9 @@ try:
 
             # function for employee login, returns employee ssn, first name, and bool value that is True if logged in, False otherwise
             def emplogin():
+                clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
+
                 print("== Employee Login ==")
                 # While loop to keep displaying menu until user has logged in or decided to quit
                 quit = 'y'
@@ -204,6 +216,8 @@ try:
                             quit = input("Would you like to try again? Enter 'n' to quit: ")
                             quit.lower()
                         else:
+                            print("Logging in...\n")
+                            time.sleep(2)
                             # passwords matched, output message, and return the ssn, first name, and True
                             print("Successfully logged in!")
                             return ssn, fname, True
@@ -293,6 +307,9 @@ try:
 
             # function to show store locations, returns a list of shop id's and locations
             def stores():
+                clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
+
                 print(f"{' Locations ':*^50}")
                 # get shop ids and locations from database
                 cur.execute("SELECT shopID, shoplocation FROM shop")
@@ -314,6 +331,9 @@ try:
 
             # function for customer to place an order
             def placeOrder(user, fname):
+                clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
+
                 print(menuSep, "Order Menu", menuSep)
                 # display store locations, and get shop ids and locations
                 shops, locations = stores()
@@ -483,6 +503,9 @@ try:
             
             # function to cancel an existing order, takes the customer's username and first name
             def cancelOrder(user, fname):
+                clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
+
                 # create function to delete from contain table
                 functionCreation = '''CREATE OR REPLACE FUNCTION delete_from_contain()
                                     RETURNS TRIGGER LANGUAGE PLPGSQL
@@ -526,8 +549,6 @@ try:
                             # display message and break from loop
                             print(f"\nOrder #{selection} successfully cancelled! A refund will be issued to you shortly.")
                             break
-            
-            
 
             # customer menu, takes in username and first name of the customer logged in
             def custView(user, fname):
@@ -555,39 +576,41 @@ try:
 
                     if selection == 1:
                         menu()
-                        print(menuSep)
                     elif selection == 2:
                         stores()
-                        print(menuSep)
                     elif selection == 3:
                         placeOrder(user, fname)
-                        print(menuSep)
                     elif selection == 4:
                         cancelOrder(user, fname)
-                        print(menuSep)
                     elif selection == 5:
                         print('Signing Out...\n')
                         signOut = True
+                        time.sleep(3)
                         break
                     elif selection == 6:
                         print('Goodbye!\n')
                     
+                    print(menuSep)
                     conn.commit()
                 
                 if signOut:
+                    clearScreen()
                     guestView()
 
             # guest view / default view
             def guestView():
+                # display welcome message
                 print(f"{'':*^50}")
                 print(f"{' Welcome to Postgres Coffee! ':*^50}")
                 print(f"{'':*^50}\n")
-                selection = 0
-                user = ''
-                fname = ''
-                isEmployee = False
+                selection = 0           # hold user selection
+                user = ''               # hold username
+                fname = ''              # hold first name
+                isEmployee = False      # bool to check if user is an employee
                 
+                # loop until quit, or user has signed in
                 while selection != 5 and len(fname) == 0:
+                    # display menu options
                     print('\n** Postgres Coffee **')
                     print('Please choose an option')
                     print('[1] Menu')
@@ -596,6 +619,7 @@ try:
                     print('[4] Sign up')
                     print('[5] Quit')
 
+                    # ask user for selection and handle input
                     selection = inputHandle('Enter your selection: ', int, [1, 5])
                     while selection == False:
                         print('Invalid input. Please try again.')
@@ -604,46 +628,122 @@ try:
                     print()
 
                     if selection == 1:
+                        # show menu
                         menu()
-                        print(menuSep)
                     elif selection == 2:
+                        # show store locations
                         stores()
-                        print(menuSep)
-                    elif selection == 3:
+                    elif selection == 3: # sign in
                         print(seperation)
+                        # ask user if they want to log in as employee or customer
                         print('[1] Customer Login')
                         print('[2] Employee Login')
+                        # handle user selection
                         s = inputHandle('Enter your selection: ', int, [1, 2])
                         while s is False:
                             print('Invalid Input. Please try again.')
                             s = inputHandle('Enter your selection: ', int, [1, 2])
-
+                        
                         if s == 1:
+                            # if 1, call customer login function
                             print(seperation)
                             user, fname = login()
-                            print(menuSep)
                         else:
+                            # if 2, call employee login function
                             print(seperation)
                             user, fname, isEmployee = emplogin()
-                            print(menuSep)
                     elif selection == 4:
+                        # create an account
                         accCreate()
-                        print(menuSep)
                     elif selection == 5:
                         print('Goodbye!\n')
                     
+                    # print decor and commit changes to db
+                    print(menuSep)
                     conn.commit()
                 
+                # check if an employee logged in
                 if isEmployee:
-                    empView(user, fname)
+                    # check if employee is a manager
+                    cur.execute('SELECT * FROM managers WHERE managerid = %s', (user, ))
+                    if len(cur.fetchall()) != 0:
+                        # if employee is a manager, open manager menu
+                        managerView(user, fname)
+                    else:
+                        # if a regular employee, open employee menu
+                        empView(user, fname)
                 elif len(fname) != 0:
+                    # if a customer logged in, open customer menu
                     custView(user, fname)
 
-            # employee view 
+            # manager view, takes the manager's ssn and first name
+            def managerView(ssn, fname):
+                selection = 0       # hold user selection
+                signOut = False     # bool to check if user wants to sign out
+                while selection != 7:
+                    # display menu options
+                    print('\n** Postgres Coffee **')
+                    if len(fname) != 0:
+                            print(f'Welcome Back, {fname}!')
+                    print('\nPlease choose an option')
+                    print('[1] Menu')
+                    print('[2] View Order')
+                    print('[3] Cancel Order')
+                    print('[4] Profile')
+                    print('[5] Request Stock from Supplier')
+                    print('[6] Sign Out')
+                    print('[7] Quit')
+
+                    # ask user selection and handle input
+                    selection = inputHandle('Enter your selection: ', int, [1, 7])
+                    while selection == False:
+                            print('Invalid input. Please try again.')
+                            selection = inputHandle('Enter your selection: ', int, [1, 7])
+                    
+                    print()
+
+                    if selection == 1:
+                        # see menu
+                        menu()
+                    elif selection == 2:
+                        #see orders in the stores
+                        emplViewOrder(ssn)
+                    elif selection == 3:
+                        #cancel order
+                        emplCancelOrderView(ssn)
+                    elif selection == 4:
+                        #see profile
+                        emplProfile(ssn)
+                        cur.execute("SELECT fname FROM employees WHERE ssn = %s", (ssn, ))
+                        fname = cur.fetchone()['fname']
+                    elif selection == 5:
+                        # request restock from supplier
+                        requestStock(ssn)
+                    elif selection == 6:
+                        # sign out
+                        print('Signing Out...\n')
+                        signOut = True
+                        time.sleep(3)
+                        break
+                    elif selection == 7:
+                        #quit
+                        print('Goodbye!\n')
+                    
+                    # print decor and commit changes to db
+                    print(menuSep)
+                    conn.commit()
+                    
+                # if user decided to sign out, clear screen and return to the guest menu
+                if signOut:
+                    clearScreen()
+                    guestView()
+
+            # employee view, takes employee ssn and first name
             def empView(ssn, fname):
-                selection = 0
-                signOut = False
+                selection = 0       # menu input
+                signOut = False     # bool to check if user wants to sign out
                 while selection != 6:
+                    # display menu options
                     print('\n** Postgres Coffee **')
                     if len(fname) != 0:
                             print(f'Welcome Back, {fname}!')
@@ -655,6 +755,7 @@ try:
                     print('[5] Sign Out')
                     print('[6] Quit')
 
+                    # input selection, and handle user input
                     selection = inputHandle('Enter your selection: ', int, [1, 6])
                     while selection == False:
                             print('Invalid input. Please try again.')
@@ -671,95 +772,212 @@ try:
                     elif selection ==3:
                         #cancel order
                         emplCancelOrderView(ssn)
-                        pass
-                    elif selection ==4:
+                    elif selection == 4:
                         #see profile
                         emplProfile(ssn)
+                        cur.execute("SELECT fname FROM employees WHERE ssn = %s", (ssn, ))
+                        fname = cur.fetchone()['fname']
                     elif selection ==5:
                         #sign out
                         print('Signing Out...\n')
                         signOut = True
+                        time.sleep(3)
                         break
                     elif selection ==6:
                         #quit
                         print('Goodbye!\n')
                     
+                    # print decor and commit changes to db
+                    print(menuSep)
                     conn.commit()
-                    
+                
+                # if user has chosen to sign out, clear screen and return to guest menu
                 if signOut:
+                    clearScreen()
                     guestView()
-                        
+
+            # function for a manager to request stock from a supplier, takes in manager ssn
+            def requestStock(ssn):
+                # clear screen and display decor
+                clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
+                print("=" * 15, "Requesting Stock", "=" * 15)
+
+                today = datetime.today().strftime('%Y-%m-%d') # get today's date
+
+                # display supplier information, and append ids to list
+                print("Suppliers:")
+                suppliers = []
+                cur.execute("SELECT * FROM supplier")
+                for record in cur.fetchall():
+                    print("{:<10} {:<50} {:<12}".format(record['supplierid'],record['suppaddress'],record['fname']))
+                    suppliers.append(str(record['supplierid']))
+
+                # ask user which supplier they wish to order from, handle user input
+                suppID = input("Enter the supplier id to order from (enter q to quit): ")
+                while suppID not in suppliers:
+                    if suppID == 'q':
+                        return
+                    else:
+                        suppID = input("Invalid input. Enter the supplier id to order from (enter q to quit): ")
+
+                # get first name of supplier and display message
+                cur.execute("SELECT fname FROM supplier WHERE supplierid = %s", (suppID, ))
+                print(f"Ordering stock from {cur.fetchall()[0][0]}:")
+
+                quit = False    # bool to check if user wants to quit
+                product = ''    # hold product id to restock
+                restock = []    # holds product ids and amounts to restock
+                while not quit:
+                    # ask user for the product id
+                    product = input('Enter the product id to restock (enter q to stop): ')
+                    # get stock from db
+                    cur.execute("SELECT stock FROM products WHERE productid = %s", (product, ))
+                    item = cur.fetchall()
+                    # check if item was found
+                    while len(item) == 0:
+                        # if user decided to stop, set quit bool to True and break
+                        if product == 'q':
+                            quit = True
+                            break
+                        else:
+                            # if item was not found, ask user for re-input
+                            product = input('Invalid product id. Enter the product id to restock (enter q to stop): ')
+                            cur.execute("SELECT productid, productname, stock FROM products WHERE productid = %s", (product, ))
+                            item = cur.fetchall()
+
+                    # check if the user decided to quit
+                    if not quit:
+                        # if not, check if the product has already been restocked by the selected supplier today
+                        checkScript = "SELECT * FROM supplies WHERE supplierid = %s AND productid = %s AND restockdate = %s"
+                        cur.execute(checkScript, (suppID, product, today))
+                        # if the supplier did restock this product today, display message
+                        if len(cur.fetchall()) != 0:
+                            print("This supplier has already restocked this product today. Please try again tomorrow.")
+                        else:
+                            # if not, display amount in stock
+                            print(f"Currently In Stock: {item[0][0]}")
+                            # ask user for the amount to restock the item and handle user input
+                            amount = inputHandle('Enter the amount to restock this item: ', int, [0, 99999999999999])
+                            while amount is False:
+                                amount = inputHandle('Invalid amount. Enter the amount to restock this item: ', int, [0, 99999999999999])
+                            # calculate the new stock
+                            newStock = item[0][0] + amount
+                            # update stock in db and display message
+                            cur.execute('UPDATE products SET stock = %s WHERE productid = %s', (newStock, product))
+                            print(f"\nSuccessfully restocked product {product} by {amount}.\n")
+                            
+                            # check if item is already in the restock list
+                            inRestock = False
+                            for i in restock:
+                                # if item has been restocked in this order, update the amount to be restocked
+                                if i[0] == product:
+                                    amt = i[1] + amount
+                                    restock.remove(i)
+                                    restock.append((product, amt))
+                                    inRestock = True
+                            
+                            # if item has not already been restocked in this order, add the tuple containing product Id and amount to the restock list
+                            if not inRestock:
+                                restock.append((product, amount))
+                
+                # loop through the restock list
+                for i in restock:
+                    # insert supplierid, each product id, today's date, and the amount for each product to the supplier table
+                    insertScript = "INSERT INTO supplies(supplierid, productid, restockdate, restockamnt) VALUES(%s, %s, %s, %s)"
+                    insertValues = (suppID, i[0], today,  i[1])
+                    cur.execute(insertScript, insertValues)
+            
+            # function to display all orders currently at a signed-in employee's store, takes in employee ssn
             def emplViewOrder(ssn):
+                clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
+
                 # get the storeID of the employee
                 cur.execute("SELECT storeid FROM employees WHERE ssn = %s", (ssn, ))
-                print(menuSep, "View Order", menuSep)
+                print("*" * 19, "View Order", "*" * 19)
                 storeID = cur.fetchone()['storeid']#clear space
                 # get store location
                 cur.execute("SELECT shoplocation FROM shop WHERE shopid = %s", (storeID,))
                 location = cur.fetchone()['shoplocation']
-                print("Order at store:", location)
+                print("Orders at store:", location, "\n")
                 # get orders at store
-                order = "SELECT * FROM orders o, customer c WHERE storeID = %s AND o.customerid = c.customerid"
+                order = "SELECT orderid, fname, customerid, totalprice, cashierid, baristaid, dates FROM orders NATURAL JOIN customer WHERE storeid = %s"
                 # table from this query
                 #  orderid | customerid | storeid |   dates    | totalprice | cashierid | baristaid | customerid | passw  |  fname  | lname | customeraddress |          email          |    dob     | phonenumber | balance 
                 #  6223451 | 100002     |    6542 | 2023-04-24 |       2.75 |    312993 |    312994 | 100002     | abc123 | Michael | Smith | 456 Oak Ave     | michael.smith@gmail.com | 1988-08-20 |  5552345678 | 2500.00
                 cur.execute(order,(storeID, ))
-                
-                # print orders
-                print(f"{'Order':<10} {'Name':<42} {'ID':<10} {'Total':<12} {'CashierID':<12} {'BaristaID':<12} {'Dates'}")
-                for record in cur.fetchall():
-                    #python sucks at printing date with string padding so I used this
-                    print("{:<10} {:<42} {:<10} {:<12} {:<12} {:<12} {}".format(record['orderid'],record['fname'], record['customerid'],record['totalprice'],record['cashierid'],record['baristaid'],record['dates']))
+                orders = cur.fetchall()
+                # check if there are orders at the store
+                if len(orders) != 0:
+                    # print orders
+                    print(f"{'Order #':<10} {'Order Date':<12} {'Customer Name':<35} {'Customer ID':<12} {'Total':<12} {'CashierID':<12} {'BaristaID':<12}")
+                    print('-' * 112)
+                    for record in orders:
+                        print("{:<10} {}   {:<35} {:<12} ${:<11} {:<12} {:<12}".format(record['orderid'],record['dates'],record['fname'], record['customerid'],record['totalprice'],record['cashierid'],record['baristaid']))
+                    # if orders were found and printed, return true
+                    return True
+                else:
+                    # if no orders found, print message and return false
+                    print("No current ongoing orders at this store.")
+                    return False
 
-            # func for employesss to cancel order at their store, needs empl's SSN
+            # func for employees to cancel order at their store, needs employee's SSN
             def emplCancelOrderView(ssn):
-                # Display the current menu first
-                emplViewOrder(ssn)
-                # create function to delete from contain table
-                functionCreation = '''CREATE OR REPLACE FUNCTION delete_from_contain()
-                                    RETURNS TRIGGER LANGUAGE PLPGSQL
-                                    AS
-                                    $$
-                                    BEGIN
-                                        DELETE FROM contain WHERE orid = OLD.orderid;
-                                        RETURN OLD;
-                                    END;
-                                    $$'''
-                cur.execute(functionCreation)
-                # create trigger to call delete_from_contain() function before delete from orders table
-                cur.execute("CREATE OR REPLACE TRIGGER trig BEFORE DELETE ON orders FOR EACH ROW EXECUTE PROCEDURE delete_from_contain()")
-                
-                # this part is to get all order numbers and store in orderlist
-                # get store of the emplyee
-                cur.execute("SELECT storeid FROM employees WHERE ssn = %s", (ssn, ))
-                storeID = cur.fetchone()['storeid']
-                # get orders at store
-                order = "SELECT * FROM orders o, customer c WHERE storeID = %s AND o.customerid = c.customerid"
-                #  orderid | customerid | storeid |   dates    | totalprice | cashierid | baristaid | customerid | passw  |  fname  | lname | customeraddress |          email          |    dob     | phonenumber | balance 
-                #  6223451 | 100002     |    6542 | 2023-04-24 |       2.75 |    312993 |    312994 | 100002     | abc123 | Michael | Smith | 456 Oak Ave     | michael.smith@gmail.com | 1988-08-20 |  5552345678 | 2500.00
-                cur.execute(order,(storeID, ))
-                # create list of order in store
-                orderlist = []
-                # store order numbers of this store in the list
-                for record in cur.fetchall():
-                    orderlist.append(str(record['orderid'])) 
+                clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
 
-                # employee enter order id to canel, q to exit
-                selection = input("Enter order ID to cancel (enter q to quit): ")
-                while selection != 'q':
-                    # not valid order, re enter
-                    if selection not in orderlist:
-                        selection = input("Invalid order ID, please enter order ID again to cancel: (enter q to quit): ")
-                    else:
-                        # success deleting
-                        selecTuple = (selection, )
-                        cur.execute("DELETE FROM orders WHERE orderid = %s", selecTuple)
-                        print(f"\nOrder #{selection} successfully cancelled! A refund will be issued to you shortly.")
-                        break
+                # Display the current menu first
+                flag = emplViewOrder(ssn)
+                if flag:
+                    # create function to delete from contain table
+                    functionCreation = '''CREATE OR REPLACE FUNCTION delete_from_contain()
+                                        RETURNS TRIGGER LANGUAGE PLPGSQL
+                                        AS
+                                        $$
+                                        BEGIN
+                                            DELETE FROM contain WHERE orid = OLD.orderid;
+                                            RETURN OLD;
+                                        END;
+                                        $$'''
+                    cur.execute(functionCreation)
+                    # create trigger to call delete_from_contain() function before delete from orders table
+                    cur.execute("CREATE OR REPLACE TRIGGER trig BEFORE DELETE ON orders FOR EACH ROW EXECUTE PROCEDURE delete_from_contain()")
+                    
+                    # this part is to get all order numbers and store in orderlist
+                    # get store of the emplyee
+                    cur.execute("SELECT storeid FROM employees WHERE ssn = %s", (ssn, ))
+                    storeID = cur.fetchone()['storeid']
+                    # get orders at store
+                    order = "SELECT orderid FROM orders o, customer c WHERE storeID = %s AND o.customerid = c.customerid"
+                    #  orderid | customerid | storeid |   dates    | totalprice | cashierid | baristaid | customerid | passw  |  fname  | lname | customeraddress |          email          |    dob     | phonenumber | balance 
+                    #  6223451 | 100002     |    6542 | 2023-04-24 |       2.75 |    312993 |    312994 | 100002     | abc123 | Michael | Smith | 456 Oak Ave     | michael.smith@gmail.com | 1988-08-20 |  5552345678 | 2500.00
+                    cur.execute(order,(storeID, ))
+                    # create list of order in store
+                    orderlist = []
+                    # store order numbers of this store in the list
+                    for record in cur.fetchall():
+                        orderlist.append(str(record['orderid'])) 
+
+                    print()
+                    # employee enter order id to canel, q to exit
+                    selection = input("Enter order ID to cancel (enter q to quit): ")
+                    while selection != 'q':
+                        # not valid order, re enter
+                        if selection not in orderlist:
+                            selection = input("Invalid order ID, please enter order ID again to cancel: (enter q to quit): ")
+                        else:
+                            # success deleting
+                            selecTuple = (selection, )
+                            cur.execute("DELETE FROM orders WHERE orderid = %s", selecTuple)
+                            print(f"\nOrder #{selection} successfully cancelled! A refund will be issued to the customer shortly.")
+                            break
             
             # function for employees to view their profile, parameter: SSN
             def emplProfile(ssn):
                 clearScreen()
+                print(menuSep, " Postgres Coffee ", menuSep)
+
                 cur.execute("DROP VIEW IF EXISTS emplProfileView")
                 cur.execute("CREATE VIEW emplProfileView AS SELECT ssn, fname, lname, empaddress, email, dob, phonenumber, storeid, passw, salary FROM employees, employs WHERE ssn = %s AND empid = %s", (ssn,ssn, ))
                 # table of view
@@ -768,14 +986,11 @@ try:
 #                 312993 | William | Jones | 98637 Maple Avenue, Fresno, CA 90005 | William.Jones@gmail.com | 1992-01-18 |  3125550195 |    6542 | 123456qwerty | 5000.00
                 
                 # decoration
-                print(seperation)
-                print("Your prile information is:\n")
+                print("Your profile information is:\n")
 
                 # print profile
                 cur.execute("SELECT * FROM emplProfileView")
                 profile = cur.fetchone()
-                # print(profile['ssn'])
-                print(f"len profile {len(profile)}")
                 for index, (key, value) in enumerate(profile.items()):
                     print("[{}]".format(index if index < len(profile)-1 and index > 0 else " "),key, ": ", value)
                 # print following:
@@ -796,69 +1011,64 @@ try:
                     selection = inputHandle("Inavlid Input\nEnter the number of the information you wish to update (0 to exit): ", int, [0, len(profile)-1])
                 
                 if(selection != 0):
-                    # update enter first name
+                    # update first name, handle user input
                     if(selection == 1):
-                        update = inputHandle("Enter you first name: ", str, [0, 30])
+                        update = inputHandle("Enter you first name: ", str, [1, 30])
                         if update == False:
-                            print("Name is too long or too short")
+                            print("Name is too long or too short.")
                         else:
                             cur.execute("UPDATE employees SET fname = %s WHERE ssn = %s", (update, ssn,))
                             print("Successfully updated")
-                    # update last name
+                    # update last name, handle user input
                     elif(selection == 2):
-                        update = inputHandle("Enter you last name: ", str, [0, 30])
+                        update = inputHandle("Enter your last name: ", str, [1, 30])
                         if update == False:
-                            print("Name is too long or too short")
+                            print("Name is too long or too short.")
                         else:
                             cur.execute("UPDATE employees SET lname = %s WHERE ssn = %s", (update, ssn,))
                             print("Successfully updated")
-                    # update address
+                    # update address, handle user input
                     elif(selection == 3):
-                        update = inputHandle("Enter you address: ", str, [0, 50])
+                        update = inputHandle("Enter you address: ", str, [1, 50])
                         if update == False:
                             print("Address is too long or too short")
                         else:
                             cur.execute("UPDATE employees SET empaddress = %s WHERE ssn = %s", (update, ssn,))
                             print("Successfully updated")
-                    # update email
+                    # update email, handle user input
                     elif(selection == 4):
-                        update = inputHandle("Enter you email: ", str, [0, 50])
+                        update = inputHandle("Enter you email: ", str, [1, 50])
                         if update == False:
                             print("Email is too long or too short")
                         else:
                             # regex matching an email (online src)
                             regex = '[^@]+@[^@]+\.[^@]+'
 
-                            if(re.search(regex,update)):   
-                                print("Valid Email")
+                            if(re.search(regex,update)):
                                 cur.execute("UPDATE employees SET email = %s WHERE ssn = %s", (update, ssn,))
                                 print("Successfully updated")
                             else:   
                                 print("Invalid Email")
-                    # update DOB
+                    # update DOB, handle user input
                     elif(selection == 5):
                         update = input('Enter your date of birth (yyyy-mm-dd): ')
                         format = "%Y-%m-%d"     #format required for database
                         validDate = False       #flag to check for valid format
-                        #while loop to check for correct format
-                        while not validDate:
-                            # try block to catch errors returned by datetime
-                            try:
-                                #call strptime to check for valid format, set validDate to bool value returned
-                                validDate = bool(datetime.strptime(update, format))
-                            except ValueError:
-                                #dob does not match format
-                                validDate = False
-                            
-                            #if dob does not match format, output message and take input again
-                            if not validDate:
-                                print("Invalid input. Please try again.")
-                                update = input('Enter your date of birth (yyyy-mm-dd): ')
+                        # try block to catch errors returned by datetime
+                        try:
+                            #call strptime to check for valid format, set validDate to bool value returned
+                            validDate = bool(datetime.strptime(update, format))
+                        except ValueError:
+                            #dob does not match format
+                            validDate = False
                         
-                        print("DOB to be updated: ", update)
-                        cur.execute("UPDATE employees SET dob = %s WHERE ssn = %s", (update, ssn,))
-                        print("Successfully updated")
-                    # update phonenumber, 10 numbers
+                        #if dob does not match format, output message and take input again
+                        if not validDate:
+                            print("Provided date is in incorrect format.")
+                        else:
+                            cur.execute("UPDATE employees SET dob = %s WHERE ssn = %s", (update, ssn,))
+                            print("Successfully updated")
+                    # update phonenumber, 10 numbers, handle user input
                     elif(selection == 6):
                         update = inputHandle('Enter your phone number (no dashes): ', int, [0000000000, 9999999999])
                         if update is False:
@@ -869,8 +1079,8 @@ try:
                             print("Successfully updated")
                     # employer update this field
                     elif(selection == 7):
-                        print("Please contact empolyer to update this field")
-                    # update password
+                        print("Please contact employer to update this field")
+                    # update password, handle user input
                     elif(selection == 8):
                         # input password, check for correct length, and confirm password with the user
                         # q for exit
@@ -891,7 +1101,6 @@ try:
                             cur.execute("UPDATE employees SET passw = %s WHERE ssn = %s", (passw, ssn,))
                             print("Successfully updated")
                         
-                
             # ------------------------ HELPER FUNCTIONS ------------------------
             # clear screen
             def clearScreen():
